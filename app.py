@@ -110,8 +110,11 @@ def get_stats():
 def serve(path=''):
     return send_from_directory('static', 'index.html')
 
+init_db()
+
 if __name__ == '__main__':
     init_db()
     print("\n✅ TriTown Monitor running at http://localhost:5000\n")
     app.run(debug=True, port=5000)
+
 
