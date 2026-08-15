@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+﻿from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import sqlite3, os, uuid
 from datetime import datetime
@@ -8,7 +8,7 @@ CORS(app)
 DB_PATH = os.environ.get('DB_PATH', 'monitor_v2.db')
 API_KEY = os.environ.get('API_KEY', 'tritown2024')
 
-# ── Database ──────────────────────────────────────────────────────
+# â”€â”€ Database â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -31,23 +31,23 @@ def init_db():
         ''')
         db.commit()
 
-# ── Alert logic ───────────────────────────────────────────────────
+# â”€â”€ Alert logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def get_alert(temp_c, humidity, pressure=None):
     temp_f = temp_c * 9/5 + 32
     pressure_falling = pressure is not None and pressure < 1013
     if temp_f > 95 and humidity < 20:
-        return 'VERY_HIGH', 'VERY HIGH FIRE RISK � Very hot and dry! No burning, call 911 if fire spotted!'
+        return 'VERY_HIGH', 'VERY HIGH FIRE RISK — Very hot and dry! No burning, call 911 if fire spotted!'
     elif humidity < 30 and temp_f > 82:
-        return 'RED', 'NO BURNING TODAY — Unusually dry and hot for TriTown! Do NOT light fires or burn leaves!'
+        return 'RED', 'NO BURNING TODAY â€” Unusually dry and hot for TriTown! Do NOT light fires or burn leaves!'
     elif humidity < 40 and temp_f > 75:
-        return 'YELLOW', 'CAUTION — Drier than normal for TriTown. Avoid burning outdoors. Keep water nearby.'
+        return 'YELLOW', 'CAUTION â€” Drier than normal for TriTown. Avoid burning outdoors. Keep water nearby.'
     elif humidity < 55 and temp_f > 70:
-        return 'YELLOW', 'LOW CAUTION — Slightly dry for TriTown. Be mindful of open flames.'
+        return 'YELLOW', 'LOW CAUTION â€” Slightly dry for TriTown. Be mindful of open flames.'
     else:
-        return 'GREEN', 'SAFE TODAY — Good air quality. Great day to be outside!'
+        return 'GREEN', 'SAFE TODAY â€” Good air quality. Great day to be outside!'
 
-# ── API routes ────────────────────────────────────────────────────
+# â”€â”€ API routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.route('/api/reading', methods=['POST'])
 def post_reading():
@@ -104,7 +104,7 @@ def get_stats():
         'last_updated': latest['created_at'] if latest else None
     })
 
-# ── Frontend ──────────────────────────────────────────────────────
+# â”€â”€ Frontend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.route('/')
 @app.route('/<path:path>')
@@ -115,7 +115,7 @@ init_db()
 
 if __name__ == '__main__':
     init_db()
-    print("\n✅ TriTown Monitor running at http://localhost:5000\n")
+    print("\nâœ… TriTown Monitor running at http://localhost:5000\n")
     app.run(debug=True, port=5000)
 
 
