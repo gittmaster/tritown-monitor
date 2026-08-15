@@ -37,15 +37,13 @@ def get_alert(temp_c, humidity, pressure=None):
     temp_f = temp_c * 9/5 + 32
     pressure_falling = pressure is not None and pressure < 1013
     if temp_f > 95 and humidity < 20:
-        return 'VERY_HIGH', 'VERY HIGH FIRE RISK — Very hot and dry! No burning, call 911 if fire spotted!'
-    elif humidity < 30 and temp_f > 82:
-        return 'RED', 'NO BURNING TODAY â€” Unusually dry and hot for TriTown! Do NOT light fires or burn leaves!'
-    elif humidity < 40 and temp_f > 75:
-        return 'YELLOW', 'CAUTION â€” Drier than normal for TriTown. Avoid burning outdoors. Keep water nearby.'
-    elif humidity < 55 and temp_f > 70:
-        return 'YELLOW', 'LOW CAUTION â€” Slightly dry for TriTown. Be mindful of open flames.'
+        return 'VERY_HIGH', 'VERY HIGH RISK - Extremely hot and dry! No burning, call 911 if fire spotted!'
+    elif temp_f >= 85 and humidity <= 30 and pressure_falling:
+        return 'HIGH', 'HIGH RISK - Hot and dry with falling pressure. Stop all outdoor burning now!'
+    elif temp_f >= 75 and humidity <= 50:
+        return 'MODERATE', 'MODERATE RISK - Drying conditions developing. Avoid burning outdoors.'
     else:
-        return 'GREEN', 'SAFE TODAY â€” Good air quality. Great day to be outside!'
+        return 'LOW', 'LOW RISK - Good air quality. Safe conditions today.'
 
 # â”€â”€ API routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -117,6 +115,8 @@ if __name__ == '__main__':
     init_db()
     print("\nâœ… TriTown Monitor running at http://localhost:5000\n")
     app.run(debug=True, port=5000)
+
+
 
 
 
