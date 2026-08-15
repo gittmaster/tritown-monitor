@@ -38,7 +38,7 @@ def get_alert(temp_c, humidity, pressure=None):
     pressure_falling = pressure is not None and pressure < 1013
     if temp_f > 95 and humidity < 20:
         return 'VERY_HIGH', 'VERY HIGH RISK - Extremely hot and dry! No burning, call 911 if fire spotted!'
-    elif temp_f >= 85 and humidity <= 30 and pressure_falling:
+    elif temp_f >= 85 and humidity <= 30:
         return 'HIGH', 'HIGH RISK - Hot and dry with falling pressure. Stop all outdoor burning now!'
     elif temp_f >= 75 and humidity <= 50:
         return 'MODERATE', 'MODERATE RISK - Drying conditions developing. Avoid burning outdoors.'
