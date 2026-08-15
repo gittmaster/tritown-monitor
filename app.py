@@ -8,8 +8,6 @@ CORS(app)
 DB_PATH = os.environ.get('DB_PATH', 'monitor.db')
 API_KEY = os.environ.get('API_KEY', 'tritown2024')
 
-init_db()
-
 # ── Database ──────────────────────────────────────────────────────
 
 def get_db():
@@ -116,3 +114,4 @@ if __name__ == '__main__':
     init_db()
     print("\n✅ TriTown Monitor running at http://localhost:5000\n")
     app.run(debug=True, port=5000)
+
