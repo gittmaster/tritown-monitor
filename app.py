@@ -5,7 +5,7 @@ from datetime import datetime
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)
-DB_PATH = os.environ.get('DB_PATH', 'monitor.db')
+DB_PATH = os.environ.get('DB_PATH', 'monitor_v2.db')
 API_KEY = os.environ.get('API_KEY', 'tritown2024')
 
 # ── Database ──────────────────────────────────────────────────────
