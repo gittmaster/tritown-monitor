@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--green:#1A7A4A;--green-bg:#E8F5EE;--yellow:#B57D00;--yellow-bg:#FFF8E1;--red:#C0392B;--red-bg:#FDEDEC;--extreme:#7B241C;--extreme-bg:#F9EBEA;--gray:#5A5E57;--border:#E5E7E0}
+:root{--LOW:#1A7A4A;--LOW-bg:#E8F5EE;--MODERATE:#B57D00;--MODERATE-bg:#FFF8E1;--red:#C0392B;--red-bg:#FDEDEC;--VERY_HIGH:#7B241C;--VERY_HIGH-bg:#F9EBEA;--gray:#5A5E57;--border:#E5E7E0}
 body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-height:100vh}
 
 /* ── Header ── */
@@ -19,22 +19,22 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 
 /* ── Main alert banner ── */
 .alert-banner{padding:2.5rem 2rem;text-align:center;transition:background .5s}
-.alert-banner.GREEN{background:linear-gradient(135deg,#E8F5EE,#C8EDD8)}
-.alert-banner.YELLOW{background:linear-gradient(135deg,#FFF8E1,#FDEABF)}
+.alert-banner.LOW{background:linear-gradient(135deg,#E8F5EE,#C8EDD8)}
+.alert-banner.MODERATE{background:linear-gradient(135deg,#FFF8E1,#FDEABF)}
 .alert-banner.RED{background:linear-gradient(135deg,#FDEDEC,#FAD4D1)}
-.alert-banner.EXTREME{background:linear-gradient(135deg,#F9EBEA,#F5BFBC);animation:pulse 2s infinite}
+.alert-banner.VERY_HIGH{background:linear-gradient(135deg,#F9EBEA,#F5BFBC);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.85}}
 .alert-icon{font-size:72px;margin-bottom:1rem;line-height:1}
 .alert-level{font-size:42px;font-weight:900;letter-spacing:-1px;margin-bottom:.5rem}
-.alert-level.GREEN{color:var(--green)}
-.alert-level.YELLOW{color:var(--yellow)}
+.alert-level.LOW{color:var(--LOW)}
+.alert-level.MODERATE{color:var(--MODERATE)}
 .alert-level.RED{color:var(--red)}
-.alert-level.EXTREME{color:var(--extreme)}
+.alert-level.VERY_HIGH{color:var(--VERY_HIGH)}
 .alert-message{font-size:20px;font-weight:500;max-width:700px;margin:0 auto 1rem;line-height:1.4}
-.alert-message.GREEN{color:#0F5132}
-.alert-message.YELLOW{color:#7D5700}
+.alert-message.LOW{color:#0F5132}
+.alert-message.MODERATE{color:#7D5700}
 .alert-message.RED{color:#922B21}
-.alert-message.EXTREME{color:var(--extreme)}
+.alert-message.VERY_HIGH{color:var(--VERY_HIGH)}
 
 /* ── Readings grid ── */
 .readings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:1.5rem 2rem;max-width:1100px;margin:0 auto}
@@ -42,10 +42,10 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .reading-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
 .location-name{font-size:16px;font-weight:700;color:#1A1C19}
 .location-badge{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700}
-.badge-GREEN{background:#E8F5EE;color:var(--green)}
-.badge-YELLOW{background:#FFF8E1;color:var(--yellow)}
+.badge-LOW{background:#E8F5EE;color:var(--LOW)}
+.badge-MODERATE{background:#FFF8E1;color:var(--MODERATE)}
 .badge-RED{background:#FDEDEC;color:var(--red)}
-.badge-EXTREME{background:#F9EBEA;color:var(--extreme)}
+.badge-VERY_HIGH{background:#F9EBEA;color:var(--VERY_HIGH)}
 .reading-values{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem}
 .reading-val{text-align:center;background:#F7F8F6;border-radius:10px;padding:.75rem}
 .reading-num{font-size:28px;font-weight:700;color:#1A1C19;line-height:1}
@@ -60,10 +60,10 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .chart-bars{display:flex;align-items:flex-end;gap:4px;height:120px;min-width:400px}
 .bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:28px}
 .bar{width:100%;border-radius:4px 4px 0 0;transition:height .4s ease;min-height:4px}
-.bar.GREEN{background:#4CAF82}
-.bar.YELLOW{background:#FFB300}
+.bar.LOW{background:#4CAF82}
+.bar.MODERATE{background:#FFB300}
 .bar.RED{background:#E53935}
-.bar.EXTREME{background:#7B241C}
+.bar.VERY_HIGH{background:#7B241C}
 .bar-label{font-size:10px;color:#9A9E97;text-align:center;white-space:nowrap}
 
 /* ── Stats row ── */
@@ -105,10 +105,10 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 </div>
 
 <!-- Main alert banner -->
-<div class="alert-banner GREEN" id="alert-banner">
+<div class="alert-banner LOW" id="alert-banner">
   <div class="alert-icon" id="alert-icon">🟢</div>
-  <div class="alert-level GREEN" id="alert-level">Loading...</div>
-  <div class="alert-message GREEN" id="alert-message">Fetching latest readings from TriTown sensors...</div>
+  <div class="alert-level LOW" id="alert-level">Loading...</div>
+  <div class="alert-message LOW" id="alert-message">Fetching latest readings from TriTown sensors...</div>
 </div>
 
 <!-- Stats row -->
@@ -138,8 +138,8 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 </div>
 
 <script>
-const icons = {GREEN:'🟢', YELLOW:'🟡', RED:'🔴', EXTREME:'🚨'};
-const labels = {GREEN:'SAFE TODAY', YELLOW:'CAUTION', RED:'NO BURNING TODAY', EXTREME:'EXTREME DANGER'};
+const icons = {LOW:'🟢', MODERATE:'🟡', RED:'🔴', VERY_HIGH:'🚨'};
+const labels = {LOW:'LOW RISK', MODERATE:'MODERATE RISK', RED:'HIGH RISK', VERY_HIGH:'VERY_HIGH DANGER'};
 let displayMode = false;
 
 function updateTime() {
@@ -150,8 +150,8 @@ function updateTime() {
 }
 
 function getWorstLevel(readings) {
-  const order = ['GREEN','YELLOW','RED','EXTREME'];
-  let worst = 'GREEN';
+  const order = ['LOW','MODERATE','RED','VERY_HIGH'];
+  let worst = 'LOW';
   readings.forEach(r => {
     if (order.indexOf(r.alert_level) > order.indexOf(worst)) worst = r.alert_level;
   });
@@ -256,3 +256,4 @@ setInterval(loadHistory, 60000);
 </script>
 </body>
 </html>
+
