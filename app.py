@@ -33,10 +33,11 @@ def init_db():
 
 # ── Alert logic ───────────────────────────────────────────────────
 
-def get_alert(temp_c, humidity):
+def get_alert(temp_c, humidity, pressure=None):
     temp_f = temp_c * 9/5 + 32
-    if humidity < 20 and temp_f > 88:
-        return 'EXTREME', 'EXTREME DANGER — Extreme conditions for TriTown! No burning, no sparks, call 911 if fire spotted!'
+    pressure_falling = pressure is not None and pressure < 1013
+    if temp_f > 95 and humidity < 20:
+        return 'VERY_HIGH', 'VERY HIGH FIRE RISK � Very hot and dry! No burning, call 911 if fire spotted!'
     elif humidity < 30 and temp_f > 82:
         return 'RED', 'NO BURNING TODAY — Unusually dry and hot for TriTown! Do NOT light fires or burn leaves!'
     elif humidity < 40 and temp_f > 75:
@@ -116,5 +117,6 @@ if __name__ == '__main__':
     init_db()
     print("\n✅ TriTown Monitor running at http://localhost:5000\n")
     app.run(debug=True, port=5000)
+
 
 
