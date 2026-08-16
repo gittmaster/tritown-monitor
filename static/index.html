@@ -22,7 +22,8 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .alert-banner.LOW{background:linear-gradient(135deg,#E8F5EE,#C8EDD8)}
 .alert-banner.MODERATE{background:linear-gradient(135deg,#FFF8E1,#FDEABF)}
 .alert-banner.RED{background:linear-gradient(135deg,#FDEDEC,#FAD4D1)}
-.alert-banner.HIGH{background:linear-gradient(135deg,#FFF0E6,#FFD4B0)} .alert-banner.VERY_HIGH{background:linear-gradient(135deg,#FDEDEC,#FAD4D1);animation:pulse 2s infinite}
+.alert-banner.HIGH{background:linear-gradient(135deg,#FFF0E6,#FFD4B0)}
+.alert-banner.VERY_HIGH{background:linear-gradient(135deg,#FDEDEC,#FAD4D1);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.85}}
 .alert-icon{font-size:72px;margin-bottom:1rem;line-height:1}
 .alert-level{font-size:42px;font-weight:900;letter-spacing:-1px;margin-bottom:.5rem}
@@ -138,8 +139,8 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 </div>
 
 <script>
-const icons = {LOW:'🟢', MODERATE:'🟡', RED:'🔴', VERY_HIGH:'🚨'};
-const labels = {LOW:'LOW RISK', MODERATE:'MODERATE RISK', RED:'HIGH RISK', VERY_HIGH:'VERY_HIGH DANGER'};
+const icons = {LOW:'🟢', MODERATE:'🟡', HIGH:'🟠', VERY_HIGH:'🔴'};
+const labels = {LOW:'LOW RISK', MODERATE:'MODERATE RISK', HIGH:'HIGH RISK', VERY_HIGH:'VERY HIGH RISK'};
 let displayMode = false;
 
 function updateTime() {
@@ -256,5 +257,7 @@ setInterval(loadHistory, 60000);
 </script>
 </body>
 </html>
+
+
 
 
