@@ -173,7 +173,7 @@ async function loadData() {
     }
 
     // Worst alert level across all locations
-    const worst = getWorstLevel(readings);
+    const worst = readings[0].alert_level;
     const banner = document.getElementById('alert-banner');
     banner.className = 'alert-banner ' + worst;
     document.getElementById('alert-icon').textContent = icons[worst] || '🟢';
@@ -257,6 +257,7 @@ setInterval(loadHistory, 60000);
 </script>
 </body>
 </html>
+
 
 
 
