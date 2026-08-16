@@ -202,7 +202,7 @@ async function loadData() {
           '<span class="location-badge badge-' + r.alert_level + '">' + (labels[r.alert_level] || r.alert_level) + '</span>' +
         '</div>' +
         '<div class="reading-values">' +
-          '<div class="reading-val"><div class="reading-num">' + r.temperature.toFixed(1) + '</div><div class="reading-unit">°C (' + tf + '°F)</div></div>' +
+          '<div class="reading-val"><div class="reading-num">' + tf + '</div><div class="reading-unit">°F (' + r.temperature.toFixed(1) + '°C)</div></div>' +
           '<div class="reading-val"><div class="reading-num">' + r.humidity.toFixed(1) + '</div><div class="reading-unit">% Humidity</div></div>' +
         '</div>' +
         '<div class="reading-time">Last reading: ' + timeAgo + '</div>' +
@@ -257,6 +257,9 @@ setInterval(loadHistory, 60000);
 </script>
 </body>
 </html>
+
+
+
 
 
 
