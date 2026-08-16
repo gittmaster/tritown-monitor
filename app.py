@@ -111,6 +111,15 @@ def serve(path=''):
 
 init_db()
 
+@app.route('/api/clear', methods=['POST'])
+def clear_readings():
+    if request.headers.get('X-API-Key') != API_KEY:
+        return jsonify({'error': 'Unauthorized'}), 401
+    with get_db() as db:
+        db.execute('DELETE FROM readings')
+        db.commit()
+    return jsonify({'success': True, 'message': 'All readings cleared'})
+
 if __name__ == '__main__':
     init_db()
     print("\nâœ… TriTown Monitor running at http://localhost:5000\n")
