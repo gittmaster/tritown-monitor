@@ -83,6 +83,7 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .display-mode .reading-num{font-size:40px}
 
 /* ── Refresh indicator ── */
+.disclaimer-bar{background:#1A1C19;color:#fff;text-align:center;padding:8px 1rem;font-size:13px;line-height:1.5}
 .refresh-bar{height:3px;background:#E5E7E0;position:relative;overflow:hidden}
 .refresh-progress{height:100%;background:#4CAF82;animation:countdown 300s linear forwards}
 @keyframes countdown{from{width:100%}to{width:0%}}
@@ -103,6 +104,16 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
     </button>
     <div class="header-time" id="current-time"></div>
   </div>
+</div>
+
+<!-- Disclaimer -->
+<div class="disclaimer-bar" id="disclaimer-bar">
+  <strong>⚠️ For awareness only.</strong> Always follow official Fire Marshall guidance and local burn bans. In emergency call 911.
+</div>
+
+<!-- Disclaimer -->
+<div class="disclaimer-bar" id="disclaimer-bar">
+  <strong>⚠️ For awareness only.</strong> Always follow official Fire Marshall guidance and local burn bans. In emergency call 911.
 </div>
 
 <!-- Main alert banner -->
@@ -257,6 +268,9 @@ setInterval(loadHistory, 60000);
 </script>
 </body>
 </html>
+
+
+
 
 
 
