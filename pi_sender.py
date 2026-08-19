@@ -2,15 +2,18 @@ import Adafruit_DHT
 import smbus2
 import requests
 import time
+import sys
 
-# ── Config — change these! ────────────────────────────────────────
+LOG_FILE = '/home/pi/sender.log'
+log = open(LOG_FILE, 'a', buffering=1)
+sys.stdout = log
+sys.stderr = log
+
 DEVICE_ID   = 'pi-library'
-LOCATION    = 'TriTown Library'
+LOCATION    = 'Middleton Flint Library'
 SERVER_URL  = 'https://tritown-monitor.onrender.com/api/reading'
 API_KEY     = 'tritown2024'
-INTERVAL    = 300  # seconds between readings (5 minutes)
-
-# ── Sensor setup ──────────────────────────────────────────────────
+INTERVAL    = 300
 DHT_SENSOR  = Adafruit_DHT.DHT22
 DHT_PIN     = 17
 BME_ADDRESS = 0x76
@@ -62,7 +65,7 @@ def read_bme(T, H):
 print("TriTown Pi Sender starting...")
 print("Location : %s" % LOCATION)
 print("Server   : %s" % SERVER_URL)
-print("Interval : %d seconds\n" % INTERVAL)
+print("Interval : %d seconds" % INTERVAL)
 
 T, H = get_calib()
 
@@ -70,36 +73,25 @@ while True:
     try:
         dht_hum, dht_temp = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN)
         bme_temp, bme_hum = read_bme(T, H)
-
         if dht_temp and dht_hum:
             avg_temp = (dht_temp + bme_temp) / 2
             avg_hum  = (dht_hum  + bme_hum)  / 2
         else:
             avg_temp = bme_temp
             avg_hum  = bme_hum
-
+        temp_f = avg_temp * 9/5 + 32
         payload = {
             'device_id'  : DEVICE_ID,
             'location'   : LOCATION,
             'temperature': round(avg_temp, 1),
             'humidity'   : round(avg_hum, 1),
         }
-
-        response = requests.post(
-            SERVER_URL,
-            json=payload,
-            headers={'X-API-Key': API_KEY},
-            timeout=10
-        )
-
+        response = requests.post(SERVER_URL, json=payload, headers={'X-API-Key': API_KEY}, timeout=10)
         if response.status_code == 201:
             data = response.json()
-            print("[OK] Sent: Temp=%.1f C  Humidity=%.1f%%  Alert=%s" % (
-                avg_temp, avg_hum, data.get('alert_level','?')))
+            print("[OK] Sent: Temp=%.1f F  Humidity=%.1f%%  Alert=%s" % (temp_f, avg_hum, data.get('alert_level','?')))
         else:
             print("[ERROR] Server returned: %d" % response.status_code)
-
     except Exception as e:
         print("[ERROR] %s" % str(e))
-
     time.sleep(INTERVAL)
