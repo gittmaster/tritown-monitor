@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -11,13 +11,13 @@
 :root{--green:#1A7A4A;--green-bg:#E8F5EE;--yellow:#B57D00;--yellow-bg:#FFF8E1;--red:#C0392B;--red-bg:#FDEDEC;--extreme:#7B241C;--extreme-bg:#F9EBEA;--gray:#5A5E57;--border:#E5E7E0}
 body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-height:100vh}
 
-/* ── Header ── */
+/* â”€â”€ Header â”€â”€ */
 .header{background:#1A1C19;color:#fff;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between}
 .header-logo{font-size:20px;font-weight:700;letter-spacing:-.3px}
 .header-logo span{color:#4CAF82}
 .header-time{font-size:13px;color:#9A9E97}
 
-/* ── Main alert banner ── */
+/* â”€â”€ Main alert banner â”€â”€ */
 .alert-banner{padding:2.5rem 2rem;text-align:center;transition:background .5s}
 .alert-banner.GREEN{background:linear-gradient(135deg,#E8F5EE,#C8EDD8)}
 .alert-banner.YELLOW{background:linear-gradient(135deg,#FFF8E1,#FDEABF)}
@@ -36,7 +36,7 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .alert-message.RED{color:#922B21}
 .alert-message.EXTREME{color:var(--extreme)}
 
-/* ── Readings grid ── */
+/* â”€â”€ Readings grid â”€â”€ */
 .readings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:1.5rem 2rem;max-width:1100px;margin:0 auto}
 .reading-card{background:#fff;border-radius:16px;border:1px solid var(--border);padding:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .reading-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
@@ -53,7 +53,7 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .reading-time{font-size:12px;color:#9A9E97;text-align:right}
 .no-data{text-align:center;color:#9A9E97;padding:2rem;font-size:14px}
 
-/* ── History chart ── */
+/* â”€â”€ History chart â”€â”€ */
 .history-section{max-width:1100px;margin:0 auto;padding:0 2rem 2rem}
 .section-title{font-size:18px;font-weight:700;margin-bottom:1rem;color:#1A1C19}
 .chart-wrap{background:#fff;border-radius:16px;border:1px solid var(--border);padding:1.5rem;overflow-x:auto}
@@ -66,13 +66,13 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .bar.EXTREME{background:#7B241C}
 .bar-label{font-size:10px;color:#9A9E97;text-align:center;white-space:nowrap}
 
-/* ── Stats row ── */
+/* â”€â”€ Stats row â”€â”€ */
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:1100px;margin:0 auto;padding:0 2rem 1.5rem}
 .stat-card{background:#fff;border-radius:12px;border:1px solid var(--border);padding:1rem;text-align:center}
 .stat-num{font-size:28px;font-weight:700;color:#4CAF82}
 .stat-label{font-size:12px;color:var(--gray);margin-top:4px}
 
-/* ── Display mode (for library board) ── */
+/* â”€â”€ Display mode (for library board) â”€â”€ */
 .display-mode .header{padding:1.5rem 3rem}
 .display-mode .header-logo{font-size:28px}
 .display-mode .alert-banner{padding:4rem 2rem}
@@ -81,12 +81,12 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .display-mode .alert-message{font-size:28px}
 .display-mode .reading-num{font-size:40px}
 
-/* ── Refresh indicator ── */
+/* â”€â”€ Refresh indicator â”€â”€ */
 .refresh-bar{height:3px;background:#E5E7E0;position:relative;overflow:hidden}
 .refresh-progress{height:100%;background:#4CAF82;animation:countdown 300s linear forwards}
 @keyframes countdown{from{width:100%}to{width:0%}}
 
-/* ── Footer ── */
+/* â”€â”€ Footer â”€â”€ */
 .footer{text-align:center;padding:1.5rem;font-size:12px;color:#9A9E97;border-top:1px solid var(--border);margin-top:1rem}
 </style>
 </head>
@@ -98,7 +98,7 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
   <div class="header-logo">TriTown <span>Environmental Alert</span></div>
   <div style="display:flex;align-items:center;gap:16px">
     <button onclick="toggleDisplay()" style="background:#333;color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">
-      📺 Display Mode
+      ðŸ“º Display Mode
     </button>
     <div class="header-time" id="current-time"></div>
   </div>
@@ -106,16 +106,16 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 
 <!-- Main alert banner -->
 <div class="alert-banner GREEN" id="alert-banner">
-  <div class="alert-icon" id="alert-icon">🟢</div>
+  <div class="alert-icon" id="alert-icon">ðŸŸ¢</div>
   <div class="alert-level GREEN" id="alert-level">Loading...</div>
   <div class="alert-message GREEN" id="alert-message">Fetching latest readings from TriTown sensors...</div>
 </div>
 
 <!-- Stats row -->
 <div class="stats-row">
-  <div class="stat-card"><div class="stat-num" id="stat-locations">—</div><div class="stat-label">Active locations</div></div>
-  <div class="stat-card"><div class="stat-num" id="stat-readings">—</div><div class="stat-label">Total readings</div></div>
-  <div class="stat-card"><div class="stat-num" id="stat-updated">—</div><div class="stat-label">Last updated</div></div>
+  <div class="stat-card"><div class="stat-num" id="stat-locations">â€”</div><div class="stat-label">Active locations</div></div>
+  <div class="stat-card"><div class="stat-num" id="stat-readings">â€”</div><div class="stat-label">Total readings</div></div>
+  <div class="stat-card"><div class="stat-num" id="stat-updated">â€”</div><div class="stat-label">Last updated</div></div>
 </div>
 
 <!-- Per-location reading cards -->
@@ -125,7 +125,7 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 
 <!-- History chart -->
 <div class="history-section">
-  <div class="section-title">Last 20 readings — humidity trend</div>
+  <div class="section-title">Last 20 readings â€” humidity trend</div>
   <div class="chart-wrap">
     <div class="chart-bars" id="chart-bars">
       <div class="no-data" style="width:100%">No history yet</div>
@@ -134,18 +134,18 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 </div>
 
 <div class="footer">
-  TriTown Environmental Monitor • Data updates every 5 minutes • Page auto-refreshes every 5 minutes
+  TriTown Environmental Monitor â€¢ Data updates every 5 minutes â€¢ Page auto-refreshes every 5 minutes
 </div>
 
 <script>
-const icons = {GREEN:'🟢', YELLOW:'🟡', RED:'🔴', EXTREME:'🚨'};
+const icons = {GREEN:'ðŸŸ¢', YELLOW:'ðŸŸ¡', RED:'ðŸ”´', EXTREME:'ðŸš¨'};
 const labels = {GREEN:'SAFE TODAY', YELLOW:'CAUTION', RED:'NO BURNING TODAY', EXTREME:'EXTREME DANGER'};
 let displayMode = false;
 
 function updateTime() {
   const now = new Date();
   document.getElementById('current-time').textContent =
-    now.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'}) + ' • ' +
+    now.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'}) + ' â€¢ ' +
     now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
 }
 
@@ -167,7 +167,7 @@ async function loadData() {
     if (!readings.length) {
       document.getElementById('alert-level').textContent = 'NO DATA YET';
       document.getElementById('alert-message').textContent = 'Waiting for sensor readings from TriTown devices...';
-      document.getElementById('readings-grid').innerHTML = '<div class="no-data">No readings yet — make sure your Pi is running combined_sender.py</div>';
+      document.getElementById('readings-grid').innerHTML = '<div class="no-data">No readings yet â€” make sure your Pi is running combined_sender.py</div>';
       return;
     }
 
@@ -175,14 +175,14 @@ async function loadData() {
     const worst = getWorstLevel(readings);
     const banner = document.getElementById('alert-banner');
     banner.className = 'alert-banner ' + worst;
-    document.getElementById('alert-icon').textContent = icons[worst] || '🟢';
+    document.getElementById('alert-icon').textContent = icons[worst] || 'ðŸŸ¢';
     document.getElementById('alert-level').className = 'alert-level ' + worst;
     document.getElementById('alert-level').textContent = labels[worst] || worst;
     document.getElementById('alert-message').className = 'alert-message ' + worst;
 
     // Use the message from the worst location
     const worstReading = readings.find(r => r.alert_level === worst) || readings[0];
-    const msg = worstReading.alert_message.split('—');
+    const msg = worstReading.alert_message.split('â€”');
     document.getElementById('alert-message').textContent = msg.length > 1 ? msg[1].trim() : worstReading.alert_message;
 
     // Stats
@@ -197,12 +197,14 @@ async function loadData() {
       const timeAgo = new Date(r.created_at + ' UTC').toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
       return '<div class="reading-card">' +
         '<div class="reading-card-header">' +
-          '<div class="location-name">📍 ' + r.location + '</div>' +
+          '<div class="location-name">ðŸ“ ' + r.location + '</div>' +
           '<span class="location-badge badge-' + r.alert_level + '">' + (labels[r.alert_level] || r.alert_level) + '</span>' +
         '</div>' +
         '<div class="reading-values">' +
-          '<div class="reading-val"><div class="reading-num">' + r.temperature.toFixed(1) + '</div><div class="reading-unit">°C (' + tf + '°F)</div></div>' +
+          '<div class="reading-val"><div class="reading-num">' + r.temperature.toFixed(1) + '</div><div class="reading-unit">Â°C (' + tf + 'Â°F)</div></div>' +
           '<div class="reading-val"><div class="reading-num">' + r.humidity.toFixed(1) + '</div><div class="reading-unit">% Humidity</div></div>' +
+          '<div class="reading-val"><div class="reading-num">' + (r.dew_point ? ((r.dew_point * 9/5 + 32).toFixed(1)) : '--') + '</div><div class="reading-unit">Dew Point F</div></div>' +
+          '<div class="reading-val"><div class="reading-num">' + (r.dew_point ? ((r.dew_point * 9/5 + 32).toFixed(1)) : '--') + '</div><div class="reading-unit">°F Dew Point</div></div>' +
         '</div>' +
         '<div class="reading-time">Last reading: ' + timeAgo + '</div>' +
       '</div>';
@@ -256,3 +258,6 @@ setInterval(loadHistory, 60000);
 </script>
 </body>
 </html>
+
+
+
