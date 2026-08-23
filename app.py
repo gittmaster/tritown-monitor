@@ -33,6 +33,56 @@ def init_db():
 
 # â”€â”€ Alert logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+def get_alert(temp_c, humidity, wind_speed=None):
+    temp_f = temp_c * 9/5 + 32
+    wind = wind_speed if wind_speed else 0
+    if humidity <= 15 and temp_f >= 85 and wind >= 25:
+        return 'EXTREME', 'EXTREME - Every fire could become large. No burning. Call 911 immediately!'
+    elif humidity <= 20 and temp_f >= 80:
+        return 'VERY_HIGH', 'VERY HIGH - Fires start easily and spread rapidly. No outdoor burning!'
+    elif humidity <= 30 and temp_f >= 70:
+        return 'HIGH', 'HIGH - Wildfires ignite easily. Outdoor burning strongly discouraged!'
+    elif humidity <= 50 and temp_f >= 60:
+        return 'MODERATE', 'MODERATE - Wildfires may occur. Restrict burning to early morning or late evening.'
+    else:
+        return 'LOW', 'LOW - Wildfire ignitions unlikely. Outdoor burning is safest.'
+
+
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+import sqlite3, os, uuid
+from datetime import datetime
+
+app = Flask(__name__, static_folder='static', static_url_path='/static')
+CORS(app)
+DB_PATH = os.environ.get('DB_PATH', 'monitor.db')
+API_KEY = os.environ.get('API_KEY', 'tritown2024')
+
+# â”€â”€ Database â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    with get_db() as db:
+        db.executescript('''
+            CREATE TABLE IF NOT EXISTS readings (
+                id TEXT PRIMARY KEY,
+                device_id TEXT NOT NULL,
+                location TEXT NOT NULL,
+                temperature REAL,
+                humidity REAL,
+                alert_level TEXT,
+                alert_message TEXT,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
+        ''')
+        db.commit()
+
+# â”€â”€ Alert logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 def get_alert(temp_c, humidity):
     temp_f = temp_c * 9/5 + 32
     if humidity < 20 and temp_f > 88:
