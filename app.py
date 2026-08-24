@@ -1,132 +1,158 @@
 ﻿from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import sqlite3, os, uuid
+import os, uuid
 from datetime import datetime
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)
-DB_PATH = os.environ.get('DB_PATH', 'monitor_v2.db')
-API_KEY = os.environ.get('API_KEY', 'tritown2024')
-
-# â”€â”€ Database â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+API_KEY      = os.environ.get('API_KEY', 'tritown2024')
+DATABASE_URL = os.environ.get('DATABASE_URL', '')
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    if DATABASE_URL:
+        import psycopg2
+        import psycopg2.extras
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        conn.cursor_factory = psycopg2.extras.RealDictCursor
+        return conn
+    else:
+        import sqlite3
+        conn = sqlite3.connect(os.environ.get('DB_PATH', 'monitor_v2.db'))
+        conn.row_factory = sqlite3.Row
+        return conn
+
+def is_pg():
+    return bool(DATABASE_URL)
+
+def ph():
+    return '%s' if is_pg() else '?'
 
 def init_db():
-    with get_db() as db:
-        db.executescript('''
-            CREATE TABLE IF NOT EXISTS readings (
-                id TEXT PRIMARY KEY,
-                device_id TEXT NOT NULL,
-                location TEXT NOT NULL,
-                temperature REAL,
-                humidity REAL,
-                alert_level TEXT,
-                alert_message TEXT,
-                created_at TEXT DEFAULT (datetime('now'))
-            );
-        ''')
-        db.commit()
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS readings (
+            id TEXT PRIMARY KEY,
+            device_id TEXT NOT NULL,
+            location TEXT NOT NULL,
+            temperature REAL,
+            humidity REAL,
+            pressure REAL,
+            dew_point REAL,
+            alert_level TEXT,
+            alert_message TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
 
-# â”€â”€ Alert logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+init_db()
 
-def get_alert(temp_c, humidity, pressure=None):
+def get_alert(temp_c, humidity, pressure=None, wind_speed=None):
     temp_f = temp_c * 9/5 + 32
-    pressure_falling = pressure is not None and pressure < 1013
-    if temp_f > 95 and humidity < 20:
-        return 'VERY_HIGH', 'VERY HIGH RISK - Extremely hot and dry! No burning, call 911 if fire spotted!'
-    elif temp_f >= 85 and humidity <= 30:
-        return 'HIGH', 'HIGH RISK - Hot and dry conditions. Stop all outdoor burning now!'
-    elif temp_f >= 75 and humidity <= 50:
-        return 'MODERATE', 'MODERATE RISK - Drying conditions developing. Avoid burning outdoors.'
+    wind = wind_speed if wind_speed else 0
+    if humidity <= 15 and temp_f >= 85 and wind >= 25:
+        return 'EXTREME', 'EXTREME - Every fire could become large. No burning. Call 911 immediately!'
+    elif humidity <= 20 and temp_f >= 80:
+        return 'VERY_HIGH', 'VERY HIGH - Fires start easily and spread rapidly. No outdoor burning!'
+    elif humidity <= 30 and temp_f >= 70:
+        return 'HIGH', 'HIGH - Wildfires ignite easily. Outdoor burning strongly discouraged!'
+    elif humidity <= 50 and temp_f >= 60:
+        return 'MODERATE', 'MODERATE - Wildfires may occur. Restrict burning to early morning or late evening.'
     else:
-        return 'LOW', 'LOW RISK - Good air quality. Safe conditions today.'
-
-# â”€â”€ API routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        return 'LOW', 'LOW - Wildfire ignitions unlikely. Outdoor burning is safest.'
 
 @app.route('/api/reading', methods=['POST'])
 def post_reading():
     if request.headers.get('X-API-Key') != API_KEY:
         return jsonify({'error': 'Unauthorized'}), 401
     d = request.json
-    temp     = d.get('temperature')
+    temp = d.get('temperature')
     humidity = d.get('humidity')
-    level, message = get_alert(temp, humidity)
+    pressure = d.get('pressure')
+    dew_point = d.get('dew_point')
+    wind_speed = d.get('wind_speed')
+    level, message = get_alert(temp, humidity, pressure, wind_speed)
     rid = str(uuid.uuid4())
-    with get_db() as db:
-        db.execute("INSERT INTO readings VALUES (?,?,?,?,?,?,?,datetime('now'))",
-                   (rid, d.get('device_id','unknown'), d.get('location','Unknown'),
-                    temp, humidity, level, message))
-        db.commit()
+    p = ph()
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(
+        'INSERT INTO readings (id,device_id,location,temperature,humidity,pressure,dew_point,alert_level,alert_message) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)' % tuple([p]*9),
+        (rid, d.get('device_id','unknown'), d.get('location','Unknown'), temp, humidity, pressure, dew_point, level, message)
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
     return jsonify({'success': True, 'alert_level': level}), 201
 
 @app.route('/api/latest', methods=['GET'])
 def get_latest():
-    with get_db() as db:
-        rows = db.execute('''
-            SELECT r.* FROM readings r
-            INNER JOIN (
-                SELECT location, MAX(created_at) as max_time
-                FROM readings GROUP BY location
-            ) latest ON r.location = latest.location AND r.created_at = latest.max_time
-            ORDER BY r.location
-        ''').fetchall()
-        total = db.execute("SELECT COUNT(*) as c FROM readings").fetchone()['c']
-    return jsonify({'readings': [dict(r) for r in rows], 'total_readings': total})
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT r.* FROM readings r
+        INNER JOIN (
+            SELECT location, MAX(created_at) as max_time
+            FROM readings GROUP BY location
+        ) latest ON r.location = latest.location AND r.created_at = latest.max_time
+        ORDER BY r.location
+    """)
+    rows = [dict(r) for r in cur.fetchall()]
+    cur.execute('SELECT COUNT(*) as c FROM readings')
+    total = cur.fetchone()['c']
+    cur.close()
+    conn.close()
+    return jsonify({'readings': rows, 'total_readings': total})
 
 @app.route('/api/history', methods=['GET'])
 def get_history():
     location = request.args.get('location', '')
-    with get_db() as db:
-        if location:
-            rows = db.execute(
-                "SELECT * FROM readings WHERE location=? ORDER BY created_at DESC LIMIT 50",
-                (location,)).fetchall()
-        else:
-            rows = db.execute(
-                "SELECT * FROM readings ORDER BY created_at DESC LIMIT 100").fetchall()
-    return jsonify([dict(r) for r in rows])
+    p = ph()
+    conn = get_db()
+    cur = conn.cursor()
+    if location:
+        cur.execute('SELECT * FROM readings WHERE location=' + p + ' ORDER BY created_at DESC LIMIT 50', (location,))
+    else:
+        cur.execute('SELECT * FROM readings ORDER BY created_at DESC LIMIT 100')
+    rows = [dict(r) for r in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return jsonify(rows)
 
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
-    with get_db() as db:
-        total    = db.execute("SELECT COUNT(*) as c FROM readings").fetchone()['c']
-        locations = db.execute("SELECT COUNT(DISTINCT location) as c FROM readings").fetchone()['c']
-        latest   = db.execute("SELECT created_at FROM readings ORDER BY created_at DESC LIMIT 1").fetchone()
-    return jsonify({
-        'total_readings': total,
-        'locations': locations,
-        'last_updated': latest['created_at'] if latest else None
-    })
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('SELECT COUNT(*) as c FROM readings')
+    total = cur.fetchone()['c']
+    cur.execute('SELECT COUNT(DISTINCT location) as c FROM readings')
+    locations = cur.fetchone()['c']
+    cur.execute('SELECT created_at FROM readings ORDER BY created_at DESC LIMIT 1')
+    latest = cur.fetchone()
+    cur.close()
+    conn.close()
+    return jsonify({'total_readings': total, 'locations': locations, 'last_updated': str(latest['created_at']) if latest else None})
 
-# â”€â”€ Frontend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+@app.route('/api/clear', methods=['POST'])
+def clear_readings():
+    if request.headers.get('X-API-Key') != API_KEY:
+        return jsonify({'error': 'Unauthorized'}), 401
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM readings')
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'success': True})
 
 @app.route('/')
 @app.route('/<path:path>')
 def serve(path=''):
     return send_from_directory('static', 'index.html')
 
-init_db()
-
-@app.route('/api/clear', methods=['POST'])
-def clear_readings():
-    if request.headers.get('X-API-Key') != API_KEY:
-        return jsonify({'error': 'Unauthorized'}), 401
-    with get_db() as db:
-        db.execute('DELETE FROM readings')
-        db.commit()
-    return jsonify({'success': True, 'message': 'All readings cleared'})
-
 if __name__ == '__main__':
-    init_db()
-    print("\nâœ… TriTown Monitor running at http://localhost:5000\n")
+    print('\n✅ TriTown Monitor running at http://localhost:5000\n')
     app.run(debug=True, port=5000)
-
-
-
-
-
-# force redeploy
