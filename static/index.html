@@ -24,18 +24,19 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .alert-banner.RED{background:linear-gradient(135deg,#FDEDEC,#FAD4D1)}
 .alert-banner.HIGH{background:linear-gradient(135deg,#FFF0E6,#FFD4B0)}
 .alert-banner.VERY_HIGH{background:linear-gradient(135deg,#FDEDEC,#FAD4D1);animation:pulse 2s infinite}
+.alert-banner.EXTREME{background:linear-gradient(135deg,#7B241C,#922B21);animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.85}}
 .alert-icon{font-size:72px;margin-bottom:1rem;line-height:1}
 .alert-level{font-size:42px;font-weight:900;letter-spacing:-1px;margin-bottom:.5rem}
 .alert-level.LOW{color:#1A7A4A}
 .alert-level.MODERATE{color:#B57D00}
 .alert-level.RED{color:var(--red)}
-.alert-level.HIGH{color:#C05000} .alert-level.VERY_HIGH{color:#C0392B}
+.alert-level.HIGH{color:#C05000} .alert-level.VERY_HIGH{color:#C0392B} .alert-level.EXTREME{color:#FFFFFF}
 .alert-message{font-size:20px;font-weight:500;max-width:700px;margin:0 auto 1rem;line-height:1.4}
 .alert-message.LOW{color:#0F5132}
 .alert-message.MODERATE{color:#7D5700}
 .alert-message.RED{color:#922B21}
-.alert-message.HIGH{color:#7D3000} .alert-message.VERY_HIGH{color:#922B21}
+.alert-message.HIGH{color:#7D3000} .alert-message.VERY_HIGH{color:#922B21} .alert-message.EXTREME{color:#FFFFFF}
 
 /* ── Readings grid ── */
 .readings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:1.5rem 2rem;max-width:1100px;margin:0 auto}
@@ -46,7 +47,7 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .badge-LOW{background:#E8F5EE;color:var(--LOW)}
 .badge-MODERATE{background:#FFF8E1;color:var(--MODERATE)}
 .badge-RED{background:#FDEDEC;color:var(--red)}
-.badge-HIGH{background:#FFF0E6;color:#C05000} .badge-VERY_HIGH{background:#FDEDEC;color:#C0392B}
+.badge-HIGH{background:#FFF0E6;color:#C05000} .badge-VERY_HIGH{background:#FDEDEC;color:#C0392B} .badge-EXTREME{background:#7B241C;color:#FFFFFF}
 .reading-values{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem}
 .reading-val{text-align:center;background:#F7F8F6;border-radius:10px;padding:.75rem}
 .reading-num{font-size:28px;font-weight:700;color:#1A1C19;line-height:1}
@@ -64,7 +65,7 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .bar.LOW{background:#4CAF82}
 .bar.MODERATE{background:#FFB300}
 .bar.RED{background:#E53935}
-.bar.HIGH{background:#FF6D00} .bar.VERY_HIGH{background:#E53935}
+.bar.HIGH{background:#FF6D00} .bar.VERY_HIGH{background:#E53935} .bar.EXTREME{background:#7B241C}
 .bar-label{font-size:10px;color:#9A9E97;text-align:center;white-space:nowrap}
 
 /* ── Stats row ── */
@@ -145,8 +146,8 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 </div>
 
 <script>
-const icons = {LOW:'🟢', MODERATE:'🟡', HIGH:'🟠', VERY_HIGH:'🔴'};
-const labels = {LOW:'LOW RISK', MODERATE:'MODERATE RISK', HIGH:'HIGH RISK', VERY_HIGH:'VERY HIGH RISK'};
+const icons = {LOW:'🟢', MODERATE:'🟡', HIGH:'🟠', VERY_HIGH:'🔴', EXTREME:'🚨'};
+const labels = {LOW:'LOW RISK', MODERATE:'MODERATE RISK', HIGH:'HIGH RISK', VERY_HIGH:'VERY HIGH RISK', EXTREME:'EXTREME DANGER'};
 let displayMode = false;
 
 function updateTime() {
@@ -157,7 +158,7 @@ function updateTime() {
 }
 
 function getWorstLevel(readings) {
-  const order = ['LOW','MODERATE','RED','VERY_HIGH'];
+  const order = ['LOW','MODERATE','HIGH','VERY_HIGH','EXTREME'];
   let worst = 'LOW';
   readings.forEach(r => {
     if (order.indexOf(r.alert_level) > order.indexOf(worst)) worst = r.alert_level;
@@ -278,5 +279,6 @@ setInterval(loadHistory, 60000);
 
 
  
+
 
 
