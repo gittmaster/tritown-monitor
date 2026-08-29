@@ -29,12 +29,13 @@ This system monitors outdoor temperature and humidity using a Raspberry Pi senso
 * Raspberry Pi 3 Model B V1.2
 * DHT22 Temperature \& Humidity Sensor
 * Micro USB 5V 2.5A Power Supply
+* SatelliteSale 9x9x4" Weatherproof Junction Box
 * Jumper wires
 
 ## 💻 Tech Stack
 
 * **Backend:** Python Flask
-* **Database:** PostgreSQL (Render)
+* **Database:** Neon.tech PostgreSQL (free forever)
 * **Frontend:** HTML/CSS/JavaScript
 * **Hosting:** Render.com
 * **Sensors:** Raspberry Pi with DHT22
@@ -202,6 +203,15 @@ tritown-monitor/
 * **Live Dashboard:** https://tritown-monitor.onrender.com
 * **GitHub:** https://github.com/gittmaster/tritown-monitor
 * **PeerBridge:** https://github.com/gittmaster/peerbridge
+
+\---
+
+## 📦 Hardware Shopping List
+
+* SatelliteSale 9x9x4" Weatherproof Junction Box (\~$32) — Amazon/Walmart
+* Mini Hot Glue Gun with sticks (\~$9) — Amazon
+* USB to RS485 Adapter (\~$15) — Amazon (for future wind sensor)
+* XS-WSDS01-RS485 Wind Sensor (\~$39) — Amazon (Version 2)
 
 \---
 
