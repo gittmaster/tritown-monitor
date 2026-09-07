@@ -196,13 +196,13 @@ async function loadData() {
     // Stats
     document.getElementById('stat-locations').textContent = readings.length;
     document.getElementById('stat-readings').textContent = data.total_readings;
-    const lastTime = new Date(worstReading.created_at.slice(0,19).replace(' ','T') + 'Z');
+    const lastTime = new Date(worstReading.created_at);
     document.getElementById('stat-updated').textContent = lastTime.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
 
     // Reading cards per location
     document.getElementById('readings-grid').innerHTML = readings.map(r => {
       const tf = (r.temperature * 9/5 + 32).toFixed(1);
-      const timeAgo = new Date(r.created_at.slice(0,19).replace(' ','T') + 'Z').toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+      const timeAgo = new Date(r.created_at).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
       return '<div class="reading-card">' +
         '<div class="reading-card-header">' +
           '<div class="location-name">📍 ' + r.location + '</div>' +
@@ -231,7 +231,7 @@ async function loadHistory() {
     const maxH   = Math.max(...last20.map(r => r.humidity));
     const bars   = last20.map(r => {
       const h   = Math.round((r.humidity / maxH) * 100);
-      const time = new Date(r.created_at.slice(0,19).replace(' ','T') + 'Z').toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+      const time = new Date(r.created_at).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
       return '<div class="bar-wrap">' +
         '<div class="bar ' + r.alert_level + '" style="height:' + h + '%;" title="' + r.humidity.toFixed(1) + '% @ ' + time + '"></div>' +
         '<div class="bar-label">' + r.humidity.toFixed(0) + '%</div>' +
@@ -279,6 +279,7 @@ setInterval(loadHistory, 60000);
 
 
  
+
 
 
 
