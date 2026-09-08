@@ -34,14 +34,31 @@ This system monitors outdoor temperature and humidity using a Raspberry Pi senso
 - **Database:** Neon.tech PostgreSQL (free forever — no expiry, no paid dependencies)
 - **Frontend:** HTML/CSS/JavaScript
 - **Hosting:** Render.com
+- **Uptime Monitoring:** UptimeRobot (free — pings every 5 minutes)
 - **Sensors:** Raspberry Pi with DHT22
 
 ---
 
 ## 📍 Current Installation
-- **Location:** Middleton Flint Library, Middleton MA
+- **Location:** Middleton Fire Station, Middleton MA
 - **Status:** Live and sending data every 5 minutes
-- **Box:** SatelliteSale 9x9x4" weatherproof junction box mounted outside
+- **Box:** SatelliteSale 9x9x4" weatherproof junction box mounted outside in shade
+
+---
+
+## 🛡️ Resilience Features
+
+| Feature | Description |
+|---|---|
+| **Auto-boot** | Pi sender starts automatically on every reboot |
+| **Watchdog** | Checks every minute if sender is running — restarts if crashed |
+| **WiFi Watchdog** | Checks WiFi every 5 minutes — reconnects if dropped |
+| **Render Keepalive** | Pi pings Render every 3 minutes to prevent spin-down |
+| **UptimeRobot** | External monitoring pings Render every 5 minutes |
+| **Retry Logic** | Sender retries failed requests 3 times before giving up |
+| **Timestamped Logs** | All logs include date/time for easy debugging |
+| **Log Rotation** | Logs rotate daily, keep 7 days, compressed automatically |
+| **Neon Database** | Data persists permanently — never lost on Render restart |
 
 ---
 
@@ -141,20 +158,25 @@ powershell -ExecutionPolicy Bypass -File ..\test_alerts.ps1
 tail -f /home/pi/sender.log
 ```
 
-### Restart Pi sender
+### Check Pi crontab (all resilience tasks)
+```bash
+crontab -l
+```
+
+### Restart Pi sender manually
 ```bash
 pkill -f pi_sender.py
 python3 /home/pi/pi_sender.py &
 ```
 
+### Check WiFi watchdog log
+```bash
+cat /home/pi/wifi_watchdog.log
+```
+
 ### Check sensor is connected
 ```bash
 sudo i2cdetect -y 1
-```
-
-### Pi sender auto-starts on boot
-```bash
-crontab -l
 ```
 
 ---
@@ -176,14 +198,14 @@ crontab -l
 ## 📁 Project Structure
 ```
 tritown-monitor/
-├── app.py                              # Flask backend + alert logic
-├── requirements.txt                    # Python dependencies
-├── render.yaml                         # Render deployment config
-├── pi_sender.py                        # Raspberry Pi sensor script
-├── README.md                           # This file
+├── app.py                                  # Flask backend + alert logic
+├── requirements.txt                        # Python dependencies
+├── render.yaml                             # Render deployment config
+├── pi_sender.py                            # Raspberry Pi sensor script
+├── README.md                               # This file
 ├── FireMarshall_TriTown_Presentation.pptx  # Fire Marshall presentation
 └── static/
-    └── index.html                      # Dashboard frontend
+    └── index.html                          # Dashboard frontend
 ```
 
 ---
@@ -201,6 +223,7 @@ tritown-monitor/
 - **GitHub:** https://github.com/gittmaster/tritown-monitor
 - **PeerBridge:** https://github.com/gittmaster/peerbridge
 - **Essex County Fire:** https://essexcountyfire.org/fire-prevention/
+- **UptimeRobot:** https://uptimerobot.com
 
 ---
 
