@@ -50,8 +50,9 @@ This system monitors outdoor temperature and humidity using a Raspberry Pi senso
 
 | Feature | Description |
 |---|---|
-| **Auto-boot** | Pi sender starts automatically on every reboot |
-| **Watchdog** | Checks every minute if sender is running — restarts if crashed |
+| **Auto-boot** | systemd starts the sender on every reboot, after the network is up |
+| **Crash restart** | systemd `Restart=always` — relaunches the sender 10s after any exit |
+| **Error capture** | stdout *and* stderr both land in `sender.log` — tracebacks are no longer lost |
 | **WiFi Watchdog** | Checks WiFi every 5 minutes — reconnects if dropped |
 | **Render Keepalive** | Pi pings Render every 3 minutes to prevent spin-down |
 | **UptimeRobot** | External monitoring pings Render every 5 minutes |
@@ -165,8 +166,15 @@ crontab -l
 
 ### Restart Pi sender manually
 ```bash
-pkill -f pi_sender.py
-python3 /home/pi/pi_sender.py &
+sudo systemctl restart pi-sender
+sudo systemctl status pi-sender
+```
+
+### Check the sender service
+```bash
+sudo systemctl status pi-sender          # is it running?
+journalctl -u pi-sender -n 50            # service events / restart history
+pgrep -af pi_sender.py                   # confirm exactly ONE sender
 ```
 
 ### Check WiFi watchdog log
@@ -202,6 +210,8 @@ tritown-monitor/
 ├── requirements.txt                        # Python dependencies
 ├── render.yaml                             # Render deployment config
 ├── pi_sender.py                            # Raspberry Pi sensor script
+├── pi-sender.service                       # systemd unit for the Pi sender
+├── crontab.new                             # Pi crontab (keepalive + wifi watchdog)
 ├── README.md                               # This file
 ├── FireMarshall_TriTown_Presentation.pptx  # Fire Marshall presentation
 └── static/
@@ -224,6 +234,120 @@ tritown-monitor/
 - **PeerBridge:** https://github.com/gittmaster/peerbridge
 - **Essex County Fire:** https://essexcountyfire.org/fire-prevention/
 - **UptimeRobot:** https://uptimerobot.com
+
+---
+
+## ⚙️ Running the Sender (systemd)
+
+`pi_sender.py` runs on the Pi as a **systemd service**, not from cron.
+
+File: `/etc/systemd/system/pi-sender.service`
+
+```ini
+[Unit]
+Description=TriTown Pi Sender
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi
+ExecStart=/usr/bin/python3 /home/pi/pi_sender.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/pi/sender.log
+StandardError=append:/home/pi/sender.log
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Install:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable pi-sender
+sudo systemctl start pi-sender
+```
+
+### Crontab (sender removed)
+
+Cron no longer starts or watches the sender. Only two jobs remain:
+
+```cron
+*/3 * * * * curl -s https://tritown-monitor.onrender.com/api/stats > /dev/null
+*/5 * * * * /home/pi/wifi_watchdog.sh
+```
+
+Backup of the previous crontab: `/home/pi/crontab.backup.txt`
+
+---
+
+## 🐛 Incident: sender stopped overnight (Sep 10, 2026)
+
+**Symptom.** Dashboard froze at 03:49 AM. Recurring over several weeks.
+
+**Original (wrong) diagnosis.** Assumed WiFi was dropping overnight.
+
+**Actual cause of the sender staying dead.** The cron watchdog was:
+
+```cron
+* * * * * pgrep -f pi_sender.py > /dev/null || python3 /home/pi/pi_sender.py &
+```
+
+`pgrep -f` matches against the full command line of every process — including the
+cron shell running that very command, whose command line contains the text
+`pi_sender.py`. So `pgrep` always found a match (itself), always exited 0, and the
+`||` restart never fired. **The watchdog never worked, not once.**
+
+A second bug in the same line: no `2>&1` redirect, so Python tracebacks went to
+stderr and were discarded. The log showed clean `[OK]` lines followed by silence
+with no error — which is why the real cause stayed invisible.
+
+**Fix.** Migrated to systemd (above). `Restart=always` actually restarts on crash,
+`After=network-online.target` fixes the boot race, and stderr is now captured.
+
+**Lesson.** `pgrep -f <pattern>` matching its own invocation is a classic trap, and
+it fails in the worst direction — silently reporting health while doing nothing.
+Test any monitor by actually killing the thing it is supposed to watch.
+
+### ⚠️ STILL OPEN: why did it die at 03:49?
+
+systemd now restarts the sender, but **the underlying cause is undiagnosed.**
+Automatic recovery is not the same as a fix.
+
+Suspects:
+
+1. **OOM kill** — 1GB RAM on a Pi 3 running a long-lived Python process.
+2. **Under-voltage brownout** — the Pi now lives outdoors in a junction box, possibly
+   on a different power run than when it was on the bench. A brownout stops the
+   process with no clean crash and no log entry, which matches the symptom exactly.
+3. **Process hang** — blocked on an HTTP call with no timeout.
+
+Diagnostics to run the morning after any stop:
+
+```bash
+uptime
+dmesg | grep -i -E "killed process|out of memory|Under-voltage"
+journalctl -u pi-sender | grep -iE "Started|Stopped|Main process"
+```
+
+- `uptime` under a few hours → the Pi rebooted; boot-order or power problem.
+- OOM lines in `dmesg` → memory leak in the sender.
+- Under-voltage lines → power supply or cable run.
+- Uptime in days with no `dmesg` hits → process hang; fix is an HTTP timeout plus
+  systemd `WatchdogSec`, which kills on *silence* rather than only on crash.
+
+### Also open
+
+- **No local buffering.** When a POST fails, that reading is lost permanently. The
+  Sep 10 outage cost roughly 64 readings (03:49–09:12). Fix: write each reading to a
+  local queue file first, POST it, delete on success, and flush the backlog when the
+  connection returns — turning an outage into a delayed upload instead of a hole in
+  the dataset.
+- **BME280 removed** after intermittent connection failures. Second unit untested.
+- **Wind sensors not ordered** (XS-WSDS01-RS485) — requested by the Fire Marshall.
 
 ---
 

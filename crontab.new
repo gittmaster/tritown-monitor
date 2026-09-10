@@ -1,0 +1,10 @@
+# TriTown Fire Monitor — crontab
+# pi_sender.py is NOT started here. It runs as a systemd service:
+#   sudo systemctl status pi-sender
+#   journalctl -u pi-sender -n 50
+
+# Keep Render awake — ping dashboard every 3 minutes
+*/3 * * * * curl -s https://tritown-monitor.onrender.com/api/stats > /dev/null
+
+# WiFi watchdog — reconnect every 5 minutes, reboot if it fails
+*/5 * * * * /home/pi/wifi_watchdog.sh
