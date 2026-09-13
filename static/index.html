@@ -229,7 +229,6 @@ async function loadHistory() {
     if (!data.length) return;
 
     const last20 = data.slice(0, 20).reverse();
-    const maxH   = Math.max(...last20.map(r => r.humidity));
     
     const svg = document.getElementById('chart-svg');
     const W=600,H=140,padL=30,padR=10,padT=10,padB=30;
@@ -292,6 +291,7 @@ setInterval(loadHistory, 60000);
 
 
  
+
 
 
 
