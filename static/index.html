@@ -59,7 +59,7 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .history-section{max-width:1100px;margin:0 auto;padding:0 2rem 2rem}
 .section-title{font-size:18px;font-weight:700;margin-bottom:1rem;color:#1A1C19}
 .chart-wrap{background:#fff;border-radius:16px;border:1px solid var(--border);padding:1.5rem;overflow-x:auto}
-.chart-bars{display:flex;align-items:flex-end;gap:4px;height:120px;min-width:400px}
+.chart-svg{width:100%;height:160px}
 .bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:28px}
 .bar{width:100%;border-radius:4px 4px 0 0;transition:height .4s ease;min-height:4px}
 .bar.LOW{background:#4CAF82}
@@ -135,9 +135,10 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 <div class="history-section">
   <div class="section-title">Last 20 readings — humidity trend</div>
   <div class="chart-wrap">
-    <div class="chart-bars" id="chart-bars">
-      <div class="no-data" style="width:100%">No history yet</div>
-    </div>
+    <svg class="chart-svg" id="chart-svg" viewBox="0 0 600 160" preserveAspectRatio="xMidYMid meet" style="width:100%;height:160px">
+      <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1D9E75" stop-opacity="0.4"/><stop offset="100%" stop-color="#1D9E75" stop-opacity="0"/></linearGradient></defs>
+      <text x="300" y="80" text-anchor="middle" fill="#9A9E97" font-size="14">No history yet</text>
+    </svg>
   </div>
 </div>
 
@@ -229,15 +230,27 @@ async function loadHistory() {
 
     const last20 = data.slice(0, 20).reverse();
     const maxH   = Math.max(...last20.map(r => r.humidity));
-    const bars   = last20.map(r => {
-      const h   = Math.round((r.humidity / maxH) * 100);
-      const time = new Date(r.created_at).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-      return '<div class="bar-wrap">' +
-        '<div class="bar ' + r.alert_level + '" style="height:' + h + '%;" title="' + r.humidity.toFixed(1) + '% @ ' + time + '"></div>' +
-        '<div class="bar-label">' + r.humidity.toFixed(0) + '%</div>' +
-      '</div>';
-    }).join('');
-    document.getElementById('chart-bars').innerHTML = bars;
+    
+    const svg = document.getElementById('chart-svg');
+    const W=600,H=140,padL=30,padR=10,padT=10,padB=30;
+    const minH=Math.max(0,Math.min(...last20.map(r=>r.humidity))-5);
+    const maxH=Math.min(100,Math.max(...last20.map(r=>r.humidity))+5);
+    const n=last20.length;
+    const xPos=(i)=>padL+(i/(n-1))*(W-padL-padR);
+    const yPos=(h)=>padT+(1-(h-minH)/(maxH-minH))*(H-padT-padB);
+    const points=last20.map((r,i)=>xPos(i)+','+yPos(r.humidity));
+    const linePath='M'+points.join(' L');
+    const areaPath='M'+xPos(0)+','+yPos(minH)+' L'+points.join(' L')+' L'+xPos(n-1)+','+yPos(minH)+' Z';
+    let html='<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1D9E75" stop-opacity="0.4"/><stop offset="100%" stop-color="#1D9E75" stop-opacity="0"/></linearGradient></defs>';
+    html+='<path fill="url(#areaGrad)" opacity="0.3" d="'+areaPath+'"/>';
+    html+='<path fill="none" stroke="#1D9E75" stroke-width="2.5" stroke-linejoin="round" d="'+linePath+'"/>';
+    last20.forEach((r,i)=>{
+      const x=xPos(i),y=yPos(r.humidity);
+      const time=new Date(r.created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+      html+='<circle fill="#1D9E75" stroke="#fff" stroke-width="2" cx="'+x+'" cy="'+y+'" r="3" title="'+r.humidity.toFixed(1)+'% @ '+time+'"\/>';
+      if(i%4===0||i===n-1)html+='<text font-size="10" fill="#9A9E97" text-anchor="middle" x="'+x+'" y="'+(H-padB+14)+'">'+(r.humidity.toFixed(0))+'%<\/text>';
+    });
+    svg.innerHTML=html;
   } catch(e) {}
 }
 
@@ -279,6 +292,10 @@ setInterval(loadHistory, 60000);
 
 
  
+
+
+
+
 
 
 
