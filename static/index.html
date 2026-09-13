@@ -237,11 +237,13 @@ async function loadHistory() {
     if (!data.length) return;
 
     const last20 = data.slice(0, 20).reverse();
-    
     const svg = document.getElementById('chart-svg');
-    const W=600,H=140,padL=30,padR=10,padT=10,padB=30;
-    const minH=Math.max(0,Math.min(...last20.map(r=>r.humidity))-5);
-    const maxH=Math.min(100,Math.max(...last20.map(r=>r.humidity))+5);
+    const W=560,H=150,padL=45,padR=15,padT=15,padB=35;
+    const rawMin=Math.min(...last20.map(r=>r.humidity));
+    const rawMax=Math.max(...last20.map(r=>r.humidity));
+    const spread=rawMax-rawMin;
+    const minH=Math.max(0, spread<5 ? rawMin-10 : rawMin-3);
+    const maxH=Math.min(100, spread<5 ? rawMax+10 : rawMax+3);
     const n=last20.length;
     const xPos=(i)=>padL+(i/(n-1))*(W-padL-padR);
     const yPos=(h)=>padT+(1-(h-minH)/(maxH-minH))*(H-padT-padB);
@@ -249,18 +251,25 @@ async function loadHistory() {
     const linePath='M'+points.join(' L');
     const areaPath='M'+xPos(0)+','+yPos(minH)+' L'+points.join(' L')+' L'+xPos(n-1)+','+yPos(minH)+' Z';
     let html='<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1D9E75" stop-opacity="0.4"/><stop offset="100%" stop-color="#1D9E75" stop-opacity="0"/></linearGradient></defs>';
+    for(let t=0;t<=4;t++){
+      const val=minH+(maxH-minH)*(t/4);
+      const y=yPos(val);
+      html+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#E5E7E0" stroke-width="1"/>';
+      html+='<text font-size="10" fill="#9A9E97" text-anchor="end" x="'+(padL-4)+'" y="'+(y+4)+'">'+Math.round(val)+'%</text>';
+    }
     html+='<path fill="url(#areaGrad)" opacity="0.3" d="'+areaPath+'"/>';
-    html+='<path fill="none" stroke="#1D9E75" stroke-width="2.5" stroke-linejoin="round" d="'+linePath+'"/>';
+    html+='<path fill="none" stroke="#1D9E75" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" d="'+linePath+'"/>';
     last20.forEach((r,i)=>{
       const x=xPos(i),y=yPos(r.humidity);
       const time=new Date(r.created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-      html+='<circle fill="#1D9E75" stroke="#fff" stroke-width="2" cx="'+x+'" cy="'+y+'" r="3" title="'+r.humidity.toFixed(1)+'% @ '+time+'"\/>';
-      if(i%4===0||i===n-1)html+='<text font-size="10" fill="#9A9E97" text-anchor="middle" x="'+x+'" y="'+(H-padB+14)+'">'+(r.humidity.toFixed(0))+'%<\/text>';
+      html+='<circle fill="#1D9E75" stroke="#fff" stroke-width="2" cx="'+x+'" cy="'+y+'" r="3.5" title="'+r.humidity.toFixed(1)+'% @ '+time+'"/>';
+      if(i===0||i===Math.floor(n/2)||i===n-1){
+        html+='<text font-size="10" fill="#9A9E97" text-anchor="middle" x="'+x+'" y="'+(H-padB+16)+'">'+time+'</text>';
+      }
     });
     svg.innerHTML=html;
-  } catch(e) {}
+  } catch(e) { console.error(e); }
 }
-
 async function loadStats() {
   try {
     const res  = await fetch('/api/stats');
