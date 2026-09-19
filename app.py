@@ -1,4 +1,4 @@
-﻿from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os, uuid
 from datetime import datetime
@@ -35,10 +35,7 @@ def cleanup_old_readings():
     cur.close()
     conn.close()
 
-def try:
-    init_db()
-except Exception as e:
-    print("DB init failed: %s" % str(e)):
+def init_db():
     conn = get_db()
     cur = conn.cursor()
     cur.execute("""
@@ -171,6 +168,3 @@ def serve(path=''):
 if __name__ == '__main__':
     print('\n✅ TriTown Monitor running at http://localhost:5000\n')
     app.run(debug=True, port=5000)
-
-
-
