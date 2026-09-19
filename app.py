@@ -27,6 +27,14 @@ def is_pg():
 def ph():
     return '%s' if is_pg() else '?'
 
+def cleanup_old_readings():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM readings WHERE created_at < NOW() - INTERVAL '7 days'")
+    conn.commit()
+    cur.close()
+    conn.close()
+
 def init_db():
     conn = get_db()
     cur = conn.cursor()
@@ -49,6 +57,7 @@ def init_db():
     conn.close()
 
 init_db()
+cleanup_old_readings()
 
 def get_alert(temp_c, humidity, pressure=None, wind_speed=None):
     temp_f = temp_c * 9/5 + 32
@@ -156,3 +165,5 @@ def serve(path=''):
 if __name__ == '__main__':
     print('\n✅ TriTown Monitor running at http://localhost:5000\n')
     app.run(debug=True, port=5000)
+
+
