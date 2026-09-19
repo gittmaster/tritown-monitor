@@ -35,7 +35,10 @@ def cleanup_old_readings():
     cur.close()
     conn.close()
 
-def init_db():
+def try:
+    init_db()
+except Exception as e:
+    print("DB init failed: %s" % str(e)):
     conn = get_db()
     cur = conn.cursor()
     cur.execute("""
@@ -56,7 +59,10 @@ def init_db():
     cur.close()
     conn.close()
 
-init_db()
+try:
+    init_db()
+except Exception as e:
+    print("DB init failed: %s" % str(e))
 cleanup_old_readings()
 
 def get_alert(temp_c, humidity, pressure=None, wind_speed=None):
@@ -165,5 +171,6 @@ def serve(path=''):
 if __name__ == '__main__':
     print('\n✅ TriTown Monitor running at http://localhost:5000\n')
     app.run(debug=True, port=5000)
+
 
 
