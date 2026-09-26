@@ -29,6 +29,7 @@ NWS_POINTS_RESPONSE = {
         "forecast": "https://api.weather.gov/gridpoints/BOX/70,112/forecast",
         "forecastHourly": "https://api.weather.gov/gridpoints/BOX/70,112/forecast/hourly",
         "observationStations": "https://api.weather.gov/gridpoints/BOX/70,112/stations",
+        "forecastGridData": "https://api.weather.gov/gridpoints/BOX/70,112",
         "fireWeatherZone": "https://api.weather.gov/zones/fire/MAZ006",
     }
 }
@@ -69,6 +70,7 @@ with patch("weather_forecast.requests.get") as mock_get:
     check("coords_to_grid returns gridY", grid["grid_y"] == 112)
     check("coords_to_grid returns forecast_url", grid["forecast_url"].endswith("/70,112/forecast"))
     check("coords_to_grid returns fire_weather_zone", grid["fire_weather_zone"] == "https://api.weather.gov/zones/fire/MAZ006")
+check("coords_to_grid returns grid_data_url", grid["grid_data_url"] == "https://api.weather.gov/gridpoints/BOX/70,112")
 
 with patch("weather_forecast.requests.get") as mock_get:
     mock_get.side_effect = [mock_response(ZIPPOPOTAM_RESPONSE), mock_response(NWS_POINTS_RESPONSE)]
@@ -210,5 +212,20 @@ check("build_hourly_projection starts at first data point", projection[0]["time"
 check("build_hourly_projection converts temp C to F correctly", projection[0]["temperature_f"] == round(15 * 9/5 + 32, 1))
 check("build_hourly_projection keeps humidity as-is", projection[0]["humidity_pct"] == 78)
 check("build_hourly_projection converts wind km/h to mph", abs(projection[0]["wind_speed_mph"] - 14.96) < 0.05)
+
+print(f"\n{passed} passed, {failed} failed")
+
+from weather_forecast import get_hourly_projection
+
+with patch("weather_forecast.requests.get") as mock_get:
+    mock_get.side_effect = [
+        mock_response(ZIPPOPOTAM_RESPONSE),
+        mock_response(NWS_POINTS_RESPONSE),
+        mock_response(GRID_DATA_FIXTURE),
+    ]
+    result = get_hourly_projection("01949", hours=6)
+    check("get_hourly_projection returns place_name", result["place_name"] == "Middleton, MA")
+    check("get_hourly_projection returns hourly data", len(result["hours"]) == 6)
+    check("get_hourly_projection hourly data has real values", result["hours"][0]["temperature_f"] == round(15 * 9/5 + 32, 1))
 
 print(f"\n{passed} passed, {failed} failed")

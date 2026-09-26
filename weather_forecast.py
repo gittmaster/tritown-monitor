@@ -42,6 +42,7 @@ def coords_to_grid(lat, lon):
         "forecast_url": props["forecast"],
         "forecast_hourly_url": props["forecastHourly"],
         "observation_stations_url": props["observationStations"],
+        "grid_data_url": props["forecastGridData"],
         "fire_weather_zone": props.get("fireWeatherZone"),
     }
 
@@ -185,3 +186,18 @@ def build_hourly_projection(grid_data_json, hours=72):
             "wind_speed_mph": round(wind_mph, 1) if wind_mph is not None else None,
         })
     return projection
+
+
+def get_hourly_projection(zip_code, hours=72):
+    """
+    ZIP code -> place name + hour-by-hour list of temperature/humidity/wind
+    readings for the next `hours` hours (default 72 = 3 days). Does not
+    compute a fire-danger alert level - see get_alert() in app.py for that.
+    """
+    grid = zip_to_grid(zip_code)
+    resp = requests.get(grid["grid_data_url"], headers=HEADERS, timeout=10)
+    resp.raise_for_status()
+    return {
+        "place_name": grid["place_name"],
+        "hours": build_hourly_projection(resp.json(), hours=hours),
+    }

@@ -163,6 +163,31 @@ def clear_readings():
     conn.close()
     return jsonify({'success': True})
 
+@app.route('/api/forecast', methods=['GET'])
+def get_forecast_route():
+    from weather_forecast import get_forecast, get_hourly_projection
+
+    zip_code = request.args.get('zip', '01949')  # defaults to Middleton, MA
+    try:
+        daily = get_forecast(zip_code)
+        hourly = get_hourly_projection(zip_code, hours=72)
+    except Exception as e:
+        return jsonify({'error': f'Could not fetch forecast: {e}'}), 502
+
+    for hour in hourly['hours']:
+        level, message = get_alert(
+            hour['temperature_c'], hour['humidity_pct'],
+            wind_speed=hour['wind_speed_mph'],
+        )
+        hour['alert_level'] = level
+        hour['alert_message'] = message
+
+    return jsonify({
+        'place_name': daily['place_name'],
+        'daily': daily['periods'],
+        'hourly': hourly['hours'],
+    })
+
 @app.route('/')
 @app.route('/<path:path>')
 def serve(path=''):
