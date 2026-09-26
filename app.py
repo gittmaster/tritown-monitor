@@ -60,7 +60,10 @@ try:
     init_db()
 except Exception as e:
     print("DB init failed: %s" % str(e))
-cleanup_old_readings()
+try:
+    cleanup_old_readings()
+except Exception as e:
+    print("Cleanup failed: %s" % str(e))
 
 def get_alert(temp_c, humidity, pressure=None, wind_speed=None):
     temp_f = temp_c * 9/5 + 32
