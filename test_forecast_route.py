@@ -77,6 +77,8 @@ with patch("weather_forecast.get_forecast", return_value=FAKE_DAILY) as gf, \
           gf.call_count == 1 and gh.call_count == 1)
     client.get("/api/forecast?zip=02139")
     check("cache: different ZIP is fetched separately", gf.call_count == 2)
+    check("route asks NWS for 7 days (168 h) of hourly data",
+          gh.call_args.kwargs.get("hours") == 168)
 
 # Expired entry + NWS down -> serve last good copy instead of an error
 app_module._forecast_cache.clear()
