@@ -99,6 +99,38 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 
 /* ── Footer ── */
 .footer{text-align:center;padding:1.5rem;font-size:12px;color:#9A9E97;border-top:1px solid var(--border);margin-top:1rem}
+
+/* ── Forecast section ── */
+.forecast-section{max-width:1100px;margin:0 auto;padding:0 2rem 2rem}
+.forecast-place{font-size:13px;color:var(--gray);margin-bottom:1rem;margin-top:-.5rem}
+.forecast-zip-row{display:flex;align-items:center;gap:8px;margin-bottom:.75rem;font-size:13px;color:var(--gray)}
+.forecast-zip-row input{width:80px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px}
+.forecast-zip-row button{padding:6px 14px;border:none;border-radius:8px;background:#1A1C19;color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer}
+.forecast-zip-row button:hover{background:#333}
+.forecast-zip-error{color:var(--red);font-size:12px;margin-bottom:.5rem}
+.forecast-zip-hint{font-size:11px;color:#9A9E97;margin-bottom:.75rem;margin-top:-4px}
+.forecast-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.forecast-card{background:#fff;border-radius:14px;border:1px solid var(--border);padding:1rem .75rem;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.forecast-day{font-size:13px;font-weight:700;color:#1A1C19;margin-bottom:.5rem}
+.forecast-risk{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;margin-bottom:.5rem}
+.forecast-risk.LOW{background:#E8F5EE;color:var(--green)}
+.forecast-risk.MODERATE{background:#FFF8E1;color:var(--yellow)}
+.forecast-risk.HIGH{background:#FFF0E6;color:var(--orange)}
+.forecast-risk.VERY_HIGH{background:#FDEDEC;color:var(--red)}
+.forecast-risk.EXTREME{background:#7B241C;color:#fff}
+.forecast-temp{font-size:22px;font-weight:700;color:#1A1C19;line-height:1}
+.forecast-detail{font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4}
+.forecast-loading{grid-column:1/-1;text-align:center;color:#9A9E97;padding:2rem;font-size:14px}
+
+/* ── Split view (current | forecast) ── */
+.split-container{display:grid;grid-template-columns:1fr;gap:0}
+.split-current,.split-forecast{min-width:0}
+.split-forecast{border-top:1px solid var(--border);padding-top:1.5rem}
+@media (min-width:1000px){
+  .split-container{grid-template-columns:1fr 1fr;align-items:start;gap:0 1.5rem}
+  .split-forecast{border-top:none;border-left:1px solid var(--border);padding-top:0;padding-left:1.5rem}
+  .split-container .stats-row,.split-container .readings-grid,.split-container .history-section,.split-container .forecast-section{max-width:none}
+}
 </style>
 </head>
 <body id="body">
@@ -120,33 +152,58 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
   <strong>⚠️ For awareness only.</strong> Always follow official Fire Marshall guidance and local burn bans. In emergency call 911.
 </div>
 
-<!-- Main alert banner -->
-<div class="alert-banner LOW" id="alert-banner">
-  <div class="alert-icon" id="alert-icon">🟢</div>
-  <div class="alert-level LOW" id="alert-level">Loading...</div>
-  <div class="alert-message LOW" id="alert-message">Fetching latest readings from TriTown sensors...</div>
-</div>
+<div class="split-container">
+  <div class="split-current">
 
-<!-- Stats row -->
-<div class="stats-row">
-  <div class="stat-card"><div class="stat-num" id="stat-locations">—</div><div class="stat-label">Active locations</div></div>
-  <div class="stat-card"><div class="stat-num" id="stat-readings">—</div><div class="stat-label">Total readings</div></div>
-  <div class="stat-card"><div class="stat-num" id="stat-updated">—</div><div class="stat-label">Last updated</div></div>
-</div>
+    <!-- Main alert banner -->
+    <div class="alert-banner LOW" id="alert-banner">
+      <div class="alert-icon" id="alert-icon">🟢</div>
+      <div class="alert-level LOW" id="alert-level">Loading...</div>
+      <div class="alert-message LOW" id="alert-message">Fetching latest readings from TriTown sensors...</div>
+    </div>
 
-<!-- Per-location reading cards -->
-<div class="readings-grid" id="readings-grid">
-  <div class="no-data">Loading sensor data...</div>
-</div>
+    <!-- Stats row -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="stat-locations">—</div><div class="stat-label">Active locations</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-readings">—</div><div class="stat-label">Total readings</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-updated">—</div><div class="stat-label">Last updated</div></div>
+    </div>
 
-<!-- History chart -->
-<div class="history-section">
-  <div class="section-title">Last 20 readings — humidity trend</div>
-  <div class="chart-wrap">
-    <svg class="chart-svg" id="chart-svg" viewBox="0 0 600 160" preserveAspectRatio="xMidYMid meet" style="width:100%;height:160px">
-      <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1D9E75" stop-opacity="0.4"/><stop offset="100%" stop-color="#1D9E75" stop-opacity="0"/></linearGradient></defs>
-      <text x="300" y="80" text-anchor="middle" fill="#9A9E97" font-size="14">No history yet</text>
-    </svg>
+    <!-- Per-location reading cards -->
+    <div class="readings-grid" id="readings-grid">
+      <div class="no-data">Loading sensor data...</div>
+    </div>
+
+    <!-- History chart -->
+    <div class="history-section">
+      <div class="section-title">Last 20 readings — humidity trend</div>
+      <div class="chart-wrap">
+        <svg class="chart-svg" id="chart-svg" viewBox="0 0 600 160" preserveAspectRatio="xMidYMid meet" style="width:100%;height:160px">
+          <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1D9E75" stop-opacity="0.4"/><stop offset="100%" stop-color="#1D9E75" stop-opacity="0"/></linearGradient></defs>
+          <text x="300" y="80" text-anchor="middle" fill="#9A9E97" font-size="14">No history yet</text>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="split-forecast">
+
+    <!-- Fire weather forecast -->
+    <div class="forecast-section">
+      <div class="section-title">Fire weather forecast — next 7 days</div>
+      <div class="forecast-zip-row">
+        <label for="forecast-zip">ZIP code:</label>
+        <input type="text" id="forecast-zip" maxlength="5" inputmode="numeric" placeholder="01949" onkeydown="if(event.key==='Enter')applyZip()">
+        <button onclick="applyZip()">Update</button>
+      </div>
+      <div class="forecast-zip-hint">Defaults to the same area as our TriTown sensors — change it to see the forecast elsewhere.</div>
+      <div class="forecast-place" id="forecast-place"></div>
+      <div class="forecast-grid" id="forecast-grid">
+        <div class="forecast-loading">Loading forecast...</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -278,6 +335,80 @@ async function loadStats() {
   } catch(e) {}
 }
 
+// 01949 = Middleton, MA — same area as the TriTown sensors shown on the left.
+const SENSOR_ZIP = '01949';
+
+function getSavedZip() {
+  try { return localStorage.getItem('tritown_zip') || SENSOR_ZIP; }
+  catch(e) { return SENSOR_ZIP; }
+}
+
+function applyZip() {
+  const input = document.getElementById('forecast-zip');
+  const zip = input.value.trim();
+  const errEl = document.getElementById('forecast-zip-error');
+  if (errEl) errEl.remove();
+
+  if (!/^\d{5}$/.test(zip)) {
+    const err = document.createElement('div');
+    err.id = 'forecast-zip-error';
+    err.className = 'forecast-zip-error';
+    err.textContent = 'Please enter a valid 5-digit ZIP code.';
+    document.querySelector('.forecast-zip-row').insertAdjacentElement('afterend', err);
+    return;
+  }
+
+  try { localStorage.setItem('tritown_zip', zip); } catch(e) {}
+  loadForecast(zip);
+}
+
+async function loadForecast(zip) {
+  zip = zip || getSavedZip();
+  const input = document.getElementById('forecast-zip');
+  if (input && !input.value) input.value = zip;
+
+  try {
+    const res  = await fetch('/api/forecast?zip=' + encodeURIComponent(zip));
+    const data = await res.json();
+
+    if (data.error) {
+      document.getElementById('forecast-place').textContent = '';
+      document.getElementById('forecast-grid').innerHTML = '<div class="forecast-loading">Could not load forecast for that ZIP code.</div>';
+      return;
+    }
+
+    document.getElementById('forecast-place').textContent = data.place_name || '';
+
+    const order = ['LOW','MODERATE','HIGH','VERY_HIGH','EXTREME'];
+    const daily = (data.daily || []).filter(p => p.is_daytime).slice(0, 7);
+
+    document.getElementById('forecast-grid').innerHTML = daily.map(p => {
+      const start = new Date(p.start_time).getTime();
+      const end   = new Date(p.end_time).getTime();
+      const inWindow = (data.hourly || []).filter(h => {
+        const t = new Date(h.time).getTime();
+        return t >= start && t < end;
+      });
+      let worst = 'LOW';
+      inWindow.forEach(h => {
+        if (order.indexOf(h.alert_level) > order.indexOf(worst)) worst = h.alert_level;
+      });
+      return '<div class="forecast-card">' +
+        '<div class="forecast-day">' + p.name + '</div>' +
+        '<div class="forecast-risk ' + worst + '">' + (labels[worst] || worst) + '</div>' +
+        '<div class="forecast-temp">' + p.temperature_f + '°F</div>' +
+        '<div class="forecast-detail">' + p.short_forecast + '<br>' +
+          'Wind ' + p.wind_speed_raw + ' ' + p.wind_direction + '<br>' +
+          p.precip_chance_pct + '% precip</div>' +
+      '</div>';
+    }).join('');
+
+  } catch(e) {
+    console.error('Error loading forecast:', e);
+    document.getElementById('forecast-grid').innerHTML = '<div class="forecast-loading">Forecast unavailable right now.</div>';
+  }
+}
+
 function toggleDisplay() {
   displayMode = !displayMode;
   document.getElementById('body').className = displayMode ? 'display-mode' : '';
@@ -288,8 +419,10 @@ updateTime();
 setInterval(updateTime, 1000);
 loadData();
 loadHistory();
+loadForecast();
 setInterval(loadData, 5000);
 setInterval(loadHistory, 60000);
+setInterval(loadForecast, 900000);
 </script>
 </body>
 </html>
