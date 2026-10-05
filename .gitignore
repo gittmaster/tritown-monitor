@@ -2,3 +2,5 @@ monitor.db
 __pycache__/
 *.pyc
 .env
+monitor_v2.db
+monitor_v2.db-journal

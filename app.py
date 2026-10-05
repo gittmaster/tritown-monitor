@@ -60,7 +60,10 @@ try:
     init_db()
 except Exception as e:
     print("DB init failed: %s" % str(e))
-cleanup_old_readings()
+try:
+    cleanup_old_readings()
+except Exception as e:
+    print("Cleanup failed: %s" % str(e))
 
 def get_alert(temp_c, humidity, pressure=None, wind_speed=None):
     temp_f = temp_c * 9/5 + 32
@@ -159,6 +162,57 @@ def clear_readings():
     cur.close()
     conn.close()
     return jsonify({'success': True})
+
+# Forecast cache: NWS only refreshes about hourly, and Render runs a single
+# gunicorn worker, so an uncached upstream fetch would stall every viewer's
+# live /api/latest polling while it runs.
+_FORECAST_TTL_SECONDS = 30 * 60
+_FORECAST_CACHE_MAX = 200
+_forecast_cache = {}  # zip_code -> (fetched_at, payload)
+
+
+@app.route('/api/forecast', methods=['GET'])
+def get_forecast_route():
+    import re, time
+    from weather_forecast import get_forecast, get_hourly_projection
+
+    zip_code = request.args.get('zip', '01949').strip()  # defaults to Middleton, MA
+    if not re.fullmatch(r'\d{5}', zip_code):
+        return jsonify({'error': 'ZIP code must be exactly 5 digits'}), 400
+
+    now = time.time()
+    cached = _forecast_cache.get(zip_code)
+    if cached and now - cached[0] < _FORECAST_TTL_SECONDS:
+        return jsonify(cached[1])
+
+    try:
+        daily = get_forecast(zip_code)
+        hourly = get_hourly_projection(zip_code, hours=72)
+    except Exception as e:
+        if cached:
+            return jsonify(cached[1])  # NWS unreachable: serve last good copy
+        return jsonify({'error': f'Could not fetch forecast: {e}'}), 502
+
+    for hour in hourly['hours']:
+        level, message = get_alert(
+            hour['temperature_c'], hour['humidity_pct'],
+            wind_speed=hour['wind_speed_mph'],
+        )
+        hour['alert_level'] = level
+        hour['alert_message'] = message
+
+    payload = {
+        'place_name': daily['place_name'],
+        'daily': daily['periods'],
+        'hourly': hourly['hours'],
+    }
+
+    if zip_code not in _forecast_cache and len(_forecast_cache) >= _FORECAST_CACHE_MAX:
+        oldest = min(_forecast_cache, key=lambda z: _forecast_cache[z][0])
+        del _forecast_cache[oldest]
+    _forecast_cache[zip_code] = (now, payload)
+
+    return jsonify(payload)
 
 @app.route('/')
 @app.route('/<path:path>')
