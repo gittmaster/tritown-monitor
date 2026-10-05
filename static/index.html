@@ -16,8 +16,14 @@ gtag('config', 'G-W5LBWM9ZMJ');
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--green:#1A7A4A;--yellow:#B57D00;--orange:#C05000;--red:#C0392B;--gray:#5A5E57;--border:#E5E7E0}
-body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-height:100vh}
+:root{
+  --green:#1A7A4A;--yellow:#B57D00;--orange:#C05000;--red:#C0392B;
+  --ink:#1A1C19;--gray:#5A5E57;--muted:#7C8078;
+  --line:#D9DDD4;--line-soft:#ECEEE8;--paper:#F0F2EE;--head:#F7F8F5;
+  --border:#E5E7E0;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 
 /* ── Header ── */
 .header{background:#1A1C19;color:#fff;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between}
@@ -25,8 +31,30 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .header-logo span{color:#4CAF82}
 .header-time{font-size:13px;color:#9A9E97}
 
-/* ── Main alert banner ── */
-.alert-banner{padding:2.5rem 2rem;text-align:center;transition:background .5s}
+/* ── Disclaimer + refresh indicator ── */
+.disclaimer-bar{background:#1A1C19;color:#fff;text-align:center;padding:8px 1rem;font-size:13px;line-height:1.5}
+.refresh-bar{height:3px;background:#E5E7E0;position:relative;overflow:hidden}
+.refresh-progress{height:100%;background:#4CAF82;animation:countdown 300s linear forwards}
+@keyframes countdown{from{width:100%}to{width:0%}}
+
+/* ── The board: one frame, columns divided by a single rule ── */
+.board-wrap{max-width:1480px;margin:0 auto;padding:24px 24px 8px}
+.board{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(26,28,25,.05)}
+.board-top{display:grid;grid-template-columns:minmax(0,1fr)}
+.panel{min-width:0;display:flex;flex-direction:column}
+.panel-forecast{border-top:1px solid var(--line)}
+.board-bottom{border-top:1px solid var(--line)}
+@media (min-width:1000px){
+  .board-top{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)}
+  .panel-forecast{border-top:none;border-left:1px solid var(--line)}
+}
+.panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 20px;background:var(--head);border-bottom:1px solid var(--line)}
+.panel-title{font-size:15px;font-weight:700;letter-spacing:-.1px}
+.panel-meta{font-size:12px;color:var(--muted)}
+.panel-meta.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#2FA36B;margin-right:7px;vertical-align:1px}
+
+/* ── Current conditions: risk banner ── */
+.alert-banner{padding:2rem 1.5rem;text-align:center;transition:background .5s}
 .alert-banner.LOW{background:linear-gradient(135deg,#E8F5EE,#C8EDD8)}
 .alert-banner.MODERATE{background:linear-gradient(135deg,#FFF8E1,#FDEABF)}
 .alert-banner.RED{background:linear-gradient(135deg,#FDEDEC,#FAD4D1)}
@@ -34,102 +62,133 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 .alert-banner.VERY_HIGH{background:linear-gradient(135deg,#FDEDEC,#FAD4D1);animation:pulse 2s infinite}
 .alert-banner.EXTREME{background:linear-gradient(135deg,#7B241C,#922B21);animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.85}}
-.alert-icon{font-size:72px;margin-bottom:1rem;line-height:1}
-.alert-level{font-size:42px;font-weight:900;letter-spacing:-1px;margin-bottom:.5rem}
+@media (prefers-reduced-motion:reduce){.alert-banner.VERY_HIGH,.alert-banner.EXTREME{animation:none}}
+.alert-icon{font-size:56px;margin-bottom:.75rem;line-height:1}
+.alert-level{font-size:40px;font-weight:900;letter-spacing:-1px;margin-bottom:.5rem}
 .alert-level.LOW{color:#1A7A4A}
 .alert-level.MODERATE{color:#B57D00}
 .alert-level.RED{color:var(--red)}
 .alert-level.HIGH{color:#C05000} .alert-level.VERY_HIGH{color:#C0392B} .alert-level.EXTREME{color:#FFFFFF}
-.alert-message{font-size:20px;font-weight:500;max-width:700px;margin:0 auto 1rem;line-height:1.4}
+.alert-message{font-size:18px;font-weight:500;max-width:620px;margin:0 auto;line-height:1.4}
 .alert-message.LOW{color:#0F5132}
 .alert-message.MODERATE{color:#7D5700}
 .alert-message.RED{color:#922B21}
 .alert-message.HIGH{color:#7D3000} .alert-message.VERY_HIGH{color:#922B21} .alert-message.EXTREME{color:#FFFFFF}
 
-/* ── Readings grid ── */
-.readings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:1.5rem 2rem;max-width:1100px;margin:0 auto}
-.reading-card{background:#fff;border-radius:16px;border:1px solid var(--border);padding:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.reading-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
-.location-name{font-size:16px;font-weight:700;color:#1A1C19}
-.location-badge{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700}
-.badge-LOW{background:#E8F5EE;color:var(--LOW)}
-.badge-MODERATE{background:#FFF8E1;color:var(--MODERATE)}
-.badge-RED{background:#FDEDEC;color:var(--red)}
-.badge-HIGH{background:#FFF0E6;color:#C05000} .badge-VERY_HIGH{background:#FDEDEC;color:#C0392B} .badge-EXTREME{background:#7B241C;color:#FFFFFF}
-.reading-values{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem}
-.reading-val{text-align:center;background:#F7F8F6;border-radius:10px;padding:.75rem}
-.reading-num{font-size:28px;font-weight:700;color:#1A1C19;line-height:1}
-.reading-unit{font-size:12px;color:var(--gray);margin-top:4px}
-.reading-time{font-size:12px;color:#9A9E97;text-align:right}
-.no-data{text-align:center;color:#9A9E97;padding:2rem;font-size:14px}
-
-/* ── History chart ── */
-.history-section{max-width:1100px;margin:0 auto;padding:0 2rem 2rem}
-.section-title{font-size:18px;font-weight:700;margin-bottom:1rem;color:#1A1C19}
-.chart-wrap{background:#fff;border-radius:16px;border:1px solid var(--border);padding:1.5rem;overflow-x:auto}
-.chart-svg{width:100%;height:160px}
-.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:28px}
-.bar{width:100%;border-radius:4px 4px 0 0;transition:height .4s ease;min-height:4px}
-.bar.LOW{background:#4CAF82}
-.bar.MODERATE{background:#FFB300}
-.bar.RED{background:#E53935}
-.bar.HIGH{background:#FF6D00} .bar.VERY_HIGH{background:#E53935} .bar.EXTREME{background:#7B241C}
-.bar-label{font-size:10px;color:#9A9E97;text-align:center;white-space:nowrap}
-
-/* ── Stats row ── */
-.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:1100px;margin:0 auto;padding:0 2rem 1.5rem}
-.stat-card{background:#fff;border-radius:12px;border:1px solid var(--border);padding:1rem;text-align:center}
-.stat-num{font-size:28px;font-weight:700;color:#4CAF82}
+/* ── Current conditions: stats strip ── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.stat-card{padding:14px 8px;text-align:center}
+.stat-card+.stat-card{border-left:1px solid var(--line)}
+.stat-num{font-size:26px;font-weight:700;color:var(--green);line-height:1.15}
 .stat-label{font-size:12px;color:var(--gray);margin-top:4px}
 
-/* ── Display mode (for library board) ── */
-.display-mode .header{padding:1.5rem 3rem}
-.display-mode .header-logo{font-size:28px}
-.display-mode .alert-banner{padding:4rem 2rem}
-.display-mode .alert-icon{font-size:100px}
-.display-mode .alert-level{font-size:64px}
-.display-mode .alert-message{font-size:28px}
-.display-mode .reading-num{font-size:40px}
+/* ── Current conditions: per-location readings ── */
+.readings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;padding:20px;flex:1;align-content:start}
+.reading-card{background:#FAFBF9;border-radius:10px;border:1px solid var(--line-soft);padding:16px}
+.reading-card-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+.location-name{font-size:15px;font-weight:700;color:var(--ink)}
+.location-badge{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.badge-LOW{background:#E8F5EE;color:var(--green)}
+.badge-MODERATE{background:#FFF8E1;color:var(--yellow)}
+.badge-RED{background:#FDEDEC;color:var(--red)}
+.badge-HIGH{background:#FFF0E6;color:#C05000} .badge-VERY_HIGH{background:#FDEDEC;color:#C0392B} .badge-EXTREME{background:#7B241C;color:#FFFFFF}
+.reading-values{display:grid;grid-template-columns:1fr 1fr;margin-bottom:12px}
+.reading-val{text-align:center;padding:4px 8px}
+.reading-val+.reading-val{border-left:1px solid var(--line)}
+.reading-num{font-size:30px;font-weight:700;color:var(--ink);line-height:1.1}
+.reading-unit{font-size:12px;color:var(--gray);margin-top:4px}
+.reading-time{font-size:12px;color:var(--muted);text-align:right}
+.no-data{text-align:center;color:var(--muted);padding:2rem;font-size:14px;grid-column:1/-1}
 
-/* ── Refresh indicator ── */
-.disclaimer-bar{background:#1A1C19;color:#fff;text-align:center;padding:8px 1rem;font-size:13px;line-height:1.5}
-.refresh-bar{height:3px;background:#E5E7E0;position:relative;overflow:hidden}
-.refresh-progress{height:100%;background:#4CAF82;animation:countdown 300s linear forwards}
-@keyframes countdown{from{width:100%}to{width:0%}}
-
-/* ── Footer ── */
-.footer{text-align:center;padding:1.5rem;font-size:12px;color:#9A9E97;border-top:1px solid var(--border);margin-top:1rem}
-
-/* ── Forecast section ── */
-.forecast-section{max-width:1100px;margin:0 auto;padding:0 2rem 2rem}
-.forecast-place{font-size:13px;color:var(--gray);margin-bottom:1rem;margin-top:-.5rem}
-.forecast-zip-row{display:flex;align-items:center;gap:8px;margin-bottom:.75rem;font-size:13px;color:var(--gray)}
-.forecast-zip-row input{width:80px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px}
-.forecast-zip-row button{padding:6px 14px;border:none;border-radius:8px;background:#1A1C19;color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer}
+/* ── Forecast: toolbar ── */
+.panel-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;padding:12px 20px;border-bottom:1px solid var(--line-soft)}
+.forecast-place{font-size:15px;font-weight:600;color:var(--ink)}
+.forecast-zip-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--gray)}
+.forecast-zip-row input{width:84px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px}
+.forecast-zip-row button{padding:7px 16px;border:none;border-radius:8px;background:#1A1C19;color:#fff;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer}
 .forecast-zip-row button:hover{background:#333}
-.forecast-zip-error{color:var(--red);font-size:12px;margin-bottom:.5rem}
-.forecast-zip-hint{font-size:11px;color:#9A9E97;margin-bottom:.75rem;margin-top:-4px}
-.forecast-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
-.forecast-card{background:#fff;border-radius:14px;border:1px solid var(--border);padding:1rem .75rem;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.forecast-day{font-size:13px;font-weight:700;color:#1A1C19;margin-bottom:.5rem}
-.forecast-risk{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;margin-bottom:.5rem}
+.forecast-zip-error{flex-basis:100%;color:var(--red);font-size:12px;text-align:right}
+
+/* ── Forecast: table ── */
+.fc-table{width:100%;border-collapse:collapse;font-size:14px}
+.fc-table th{font-size:12px;font-weight:500;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line-soft)}
+.fc-table td{padding:13px 12px;border-bottom:1px solid var(--line-soft);color:var(--gray);vertical-align:middle}
+.fc-table tbody tr:last-child td{border-bottom:none}
+.fc-table th:first-child,.fc-table td:first-child{padding-left:20px}
+.fc-table th:last-child,.fc-table td:last-child{padding-right:20px;text-align:right}
+.fc-table td.fc-day{font-weight:700;color:var(--ink);white-space:nowrap}
+.fc-table td.fc-temp{font-weight:700;color:var(--ink);font-size:16px;white-space:nowrap}
+.fc-table td.fc-cond{min-width:120px}
+.fc-table td.fc-wind,.fc-table td.fc-precip{white-space:nowrap}
+.fc-table td.fc-empty{text-align:center;color:var(--muted);padding:2.5rem 1rem}
+.fc-table tr.risk-LOW{--edge:#4CAF82}
+.fc-table tr.risk-MODERATE{--edge:#E0A100}
+.fc-table tr.risk-HIGH{--edge:#E8710A}
+.fc-table tr.risk-VERY_HIGH{--edge:#D64533}
+.fc-table tr.risk-EXTREME{--edge:#7B241C}
+.fc-table tr.risk-NONE{--edge:#C9CCC4}
+.fc-table tbody tr td:first-child{box-shadow:inset 3px 0 0 var(--edge,transparent)}
+.forecast-risk{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
 .forecast-risk.LOW{background:#E8F5EE;color:var(--green)}
 .forecast-risk.MODERATE{background:#FFF8E1;color:var(--yellow)}
 .forecast-risk.HIGH{background:#FFF0E6;color:var(--orange)}
 .forecast-risk.VERY_HIGH{background:#FDEDEC;color:var(--red)}
 .forecast-risk.EXTREME{background:#7B241C;color:#fff}
-.forecast-temp{font-size:22px;font-weight:700;color:#1A1C19;line-height:1}
-.forecast-detail{font-size:11px;color:var(--gray);margin-top:6px;line-height:1.4}
-.forecast-loading{grid-column:1/-1;text-align:center;color:#9A9E97;padding:2rem;font-size:14px}
+.forecast-risk.NONE{background:#EEF0EA;color:#6B6F67}
+.fc-note{margin-top:auto;padding:12px 20px 14px;font-size:12px;color:var(--muted);line-height:1.5;border-top:1px solid var(--line-soft)}
 
-/* ── Split view (current | forecast) ── */
-.split-container{display:grid;grid-template-columns:1fr;gap:0}
-.split-current,.split-forecast{min-width:0}
-.split-forecast{border-top:1px solid var(--border);padding-top:1.5rem}
-@media (min-width:1000px){
-  .split-container{grid-template-columns:1fr 1fr;align-items:start;gap:0 1.5rem}
-  .split-forecast{border-top:none;border-left:1px solid var(--border);padding-top:0;padding-left:1.5rem}
-  .split-container .stats-row,.split-container .readings-grid,.split-container .history-section,.split-container .forecast-section{max-width:none}
+/* ── Humidity trend: full-width band ── */
+.chart-wrap{padding:16px 20px 12px}
+.chart-svg{display:block;width:100%;height:220px}
+
+/* ── Display mode (library board) ── */
+.display-mode .header{padding:1.5rem 3rem}
+.display-mode .header-logo{font-size:28px}
+.display-mode .alert-banner{padding:3rem 2rem}
+.display-mode .alert-icon{font-size:88px}
+.display-mode .alert-level{font-size:60px}
+.display-mode .alert-message{font-size:26px}
+.display-mode .reading-num{font-size:40px}
+.display-mode .panel-title{font-size:20px}
+.display-mode .fc-table{font-size:17px}
+.display-mode .fc-table td.fc-temp{font-size:20px}
+.display-mode .forecast-risk,.display-mode .location-badge{font-size:13px}
+.display-mode .panel-meta,.display-mode .fc-note{font-size:14px}
+.display-mode .fc-table th{font-size:14px}
+
+/* ── Footer ── */
+.footer{text-align:center;padding:1.5rem;font-size:12px;color:#9A9E97;margin-top:1rem}
+
+/* ── Narrower laptop widths: drop the secondary Conditions column ── */
+@media (min-width:1000px) and (max-width:1279px){
+  .fc-cond{display:none}
+}
+
+/* ── Small screens ── */
+@media (max-width:640px){
+  .header{padding:.85rem 1rem;flex-wrap:wrap;gap:6px 12px}
+  .header-logo{font-size:17px}
+  .board-wrap{padding:12px 12px 4px}
+  .panel-head,.panel-toolbar,.fc-note,.chart-wrap{padding-left:14px;padding-right:14px}
+  .readings-grid{padding:14px}
+  .alert-level{font-size:32px}
+  .stat-num{font-size:22px}
+  .forecast-zip-error{text-align:left}
+
+  /* forecast rows become two-line entries instead of a squeezed table */
+  .fc-table,.fc-table tbody{display:block}
+  .fc-table thead{display:none}
+  .fc-table tr{display:grid;grid-template-columns:auto auto 1fr;grid-template-areas:"day day risk" "temp wind precip";gap:4px 16px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line-soft);box-shadow:inset 3px 0 0 var(--edge,transparent)}
+  .fc-table tbody tr:last-child{border-bottom:none}
+  .fc-table td{display:block;padding:0 !important;border:none !important;box-shadow:none !important}
+  .fc-table td.fc-day{grid-area:day}
+  .fc-table td.fc-temp{grid-area:temp;font-size:15px}
+  .fc-table td.fc-wind{grid-area:wind;font-size:13px}
+  .fc-table td.fc-precip{grid-area:precip;font-size:13px;text-align:right}
+  .fc-table td.fc-precip::after{content:" precip"}
+  .fc-table td.fc-risk{grid-area:risk;justify-self:end}
+  .fc-table td.fc-cond{display:none}
+  .fc-table td.fc-empty{grid-column:1 / -1;padding:2rem 0 !important}
 }
 </style>
 </head>
@@ -152,60 +211,83 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
   <strong>⚠️ For awareness only.</strong> Always follow official Fire Marshall guidance and local burn bans. In emergency call 911.
 </div>
 
-<div class="split-container">
-  <div class="split-current">
+<main class="board-wrap">
+  <div class="board">
+    <div class="board-top">
 
-    <!-- Main alert banner -->
-    <div class="alert-banner LOW" id="alert-banner">
-      <div class="alert-icon" id="alert-icon">🟢</div>
-      <div class="alert-level LOW" id="alert-level">Loading...</div>
-      <div class="alert-message LOW" id="alert-message">Fetching latest readings from TriTown sensors...</div>
+      <section class="panel panel-current" aria-labelledby="current-title">
+        <div class="panel-head">
+          <h2 class="panel-title" id="current-title">Current conditions</h2>
+          <span class="panel-meta live">Updates every 5 seconds</span>
+        </div>
+
+        <!-- Main alert banner -->
+        <div class="alert-banner LOW" id="alert-banner">
+          <div class="alert-icon" id="alert-icon">🟢</div>
+          <div class="alert-level LOW" id="alert-level">Loading...</div>
+          <div class="alert-message LOW" id="alert-message">Fetching latest readings from TriTown sensors...</div>
+        </div>
+
+        <!-- Stats strip -->
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-num" id="stat-locations">—</div><div class="stat-label">Active locations</div></div>
+          <div class="stat-card"><div class="stat-num" id="stat-readings">—</div><div class="stat-label">Total readings</div></div>
+          <div class="stat-card"><div class="stat-num" id="stat-updated">—</div><div class="stat-label">Last updated</div></div>
+        </div>
+
+        <!-- Per-location readings -->
+        <div class="readings-grid" id="readings-grid">
+          <div class="no-data">Loading sensor data...</div>
+        </div>
+      </section>
+
+      <section class="panel panel-forecast" aria-labelledby="forecast-title">
+        <div class="panel-head">
+          <h2 class="panel-title" id="forecast-title">Fire weather forecast</h2>
+          <span class="panel-meta">Next 7 days, from the National Weather Service</span>
+        </div>
+
+        <div class="panel-toolbar">
+          <div class="forecast-place" id="forecast-place"></div>
+          <div class="forecast-zip-row">
+            <label for="forecast-zip">ZIP code</label>
+            <input type="text" id="forecast-zip" maxlength="5" inputmode="numeric" placeholder="01949" onkeydown="if(event.key==='Enter')applyZip()">
+            <button onclick="applyZip()">Update</button>
+          </div>
+        </div>
+
+        <table class="fc-table">
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th class="fc-cond">Conditions</th>
+              <th>Temp</th>
+              <th>Wind</th>
+              <th>Precip</th>
+              <th>Fire risk</th>
+            </tr>
+          </thead>
+          <tbody id="forecast-grid">
+            <tr><td colspan="6" class="fc-empty">Loading forecast...</td></tr>
+          </tbody>
+        </table>
+
+        <p class="fc-note">Fire risk is the highest hourly level forecast for that day. Days without enough forecast data show no estimate. The default ZIP code is the TriTown sensor area.</p>
+      </section>
+
     </div>
 
-    <!-- Stats row -->
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-num" id="stat-locations">—</div><div class="stat-label">Active locations</div></div>
-      <div class="stat-card"><div class="stat-num" id="stat-readings">—</div><div class="stat-label">Total readings</div></div>
-      <div class="stat-card"><div class="stat-num" id="stat-updated">—</div><div class="stat-label">Last updated</div></div>
-    </div>
-
-    <!-- Per-location reading cards -->
-    <div class="readings-grid" id="readings-grid">
-      <div class="no-data">Loading sensor data...</div>
-    </div>
-
-    <!-- History chart -->
-    <div class="history-section">
-      <div class="section-title">Last 20 readings — humidity trend</div>
+    <section class="panel board-bottom" aria-labelledby="trend-title">
+      <div class="panel-head">
+        <h2 class="panel-title" id="trend-title">Humidity trend</h2>
+        <span class="panel-meta">Last 20 readings</span>
+      </div>
       <div class="chart-wrap">
-        <svg class="chart-svg" id="chart-svg" viewBox="0 0 600 160" preserveAspectRatio="xMidYMid meet" style="width:100%;height:160px">
-          <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1D9E75" stop-opacity="0.4"/><stop offset="100%" stop-color="#1D9E75" stop-opacity="0"/></linearGradient></defs>
-          <text x="300" y="80" text-anchor="middle" fill="#9A9E97" font-size="14">No history yet</text>
-        </svg>
+        <svg class="chart-svg" id="chart-svg" role="img" aria-label="Humidity over the last 20 readings"></svg>
       </div>
-    </div>
-
+    </section>
   </div>
-
-  <div class="split-forecast">
-
-    <!-- Fire weather forecast -->
-    <div class="forecast-section">
-      <div class="section-title">Fire weather forecast — next 7 days</div>
-      <div class="forecast-zip-row">
-        <label for="forecast-zip">ZIP code:</label>
-        <input type="text" id="forecast-zip" maxlength="5" inputmode="numeric" placeholder="01949" onkeydown="if(event.key==='Enter')applyZip()">
-        <button onclick="applyZip()">Update</button>
-      </div>
-      <div class="forecast-zip-hint">Defaults to the same area as our TriTown sensors — change it to see the forecast elsewhere.</div>
-      <div class="forecast-place" id="forecast-place"></div>
-      <div class="forecast-grid" id="forecast-grid">
-        <div class="forecast-loading">Loading forecast...</div>
-      </div>
-    </div>
-
-  </div>
-</div>
+</main>
 
 <div class="footer">
   TriTown Environmental Monitor • Data updates every 5 minutes • Page auto-refreshes every 5 minutes
@@ -213,7 +295,7 @@ body{font-family:'DM Sans',sans-serif;background:#F0F2EE;color:#1A1C19;min-heigh
 
 <script>
 const icons = {LOW:'🟢', MODERATE:'🟡', HIGH:'🟠', VERY_HIGH:'🔴', EXTREME:'🚨'};
-const labels = {LOW:'LOW RISK', MODERATE:'MODERATE RISK', HIGH:'HIGH RISK', VERY_HIGH:'VERY HIGH RISK', EXTREME:'EXTREME DANGER'};
+const labels = {LOW:'LOW RISK', MODERATE:'MODERATE RISK', HIGH:'HIGH RISK', VERY_HIGH:'VERY HIGH RISK', EXTREME:'EXTREME DANGER', NONE:'NO ESTIMATE'};
 let displayMode = false;
 
 function updateTime() {
@@ -287,44 +369,67 @@ async function loadData() {
   }
 }
 
+let historyRows = null;
+
+function drawHistory() {
+  const svg = document.getElementById('chart-svg');
+  if (!svg) return;
+  const W = Math.max(300, Math.round(svg.getBoundingClientRect().width));
+  const H = 220, padL = 48, padR = 18, padT = 16, padB = 34;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+
+  if (!historyRows || !historyRows.length) {
+    const msg = historyRows === null ? 'Loading history...' : 'No readings yet';
+    svg.innerHTML = '<text x="' + (W/2) + '" y="' + (H/2) + '" text-anchor="middle" fill="#7C8078" font-size="14">' + msg + '</text>';
+    return;
+  }
+
+  const rows = historyRows;
+  const n = rows.length;
+  const rawMin = Math.min(...rows.map(r => r.humidity));
+  const rawMax = Math.max(...rows.map(r => r.humidity));
+  const spread = rawMax - rawMin;
+  const minH = Math.max(0, spread < 5 ? rawMin - 10 : rawMin - 3);
+  const maxH = Math.min(100, spread < 5 ? rawMax + 10 : rawMax + 3);
+  const xPos = i => padL + (n > 1 ? i / (n - 1) : 0.5) * (W - padL - padR);
+  const yPos = h => padT + (1 - (h - minH) / (maxH - minH)) * (H - padT - padB);
+  const points = rows.map((r, i) => xPos(i) + ',' + yPos(r.humidity));
+  const linePath = 'M' + points.join(' L');
+  const areaPath = 'M' + xPos(0) + ',' + yPos(minH) + ' L' + points.join(' L') + ' L' + xPos(n - 1) + ',' + yPos(minH) + ' Z';
+
+  let html = '<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1D9E75" stop-opacity="0.4"/><stop offset="100%" stop-color="#1D9E75" stop-opacity="0"/></linearGradient></defs>';
+  for (let t = 0; t <= 4; t++) {
+    const val = minH + (maxH - minH) * (t / 4);
+    const y = yPos(val);
+    html += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '" stroke="#E5E7E0" stroke-width="1"/>';
+    html += '<text font-size="11" fill="#7C8078" text-anchor="end" x="' + (padL - 8) + '" y="' + (y + 4) + '">' + Math.round(val) + '%</text>';
+  }
+  html += '<path fill="url(#areaGrad)" opacity="0.3" d="' + areaPath + '"/>';
+  html += '<path fill="none" stroke="#1D9E75" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" d="' + linePath + '"/>';
+
+  // Evenly spaced time labels: fewer on narrow screens so they never collide.
+  const labelCount = W < 520 ? 3 : 6;
+  const labelAt = new Set();
+  for (let k = 0; k < labelCount; k++) labelAt.add(Math.round(k * (n - 1) / (labelCount - 1)));
+
+  rows.forEach((r, i) => {
+    const x = xPos(i), y = yPos(r.humidity);
+    const time = new Date(r.created_at).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
+    html += '<circle fill="#1D9E75" stroke="#fff" stroke-width="2" cx="' + x + '" cy="' + y + '" r="3.5"><title>' + r.humidity.toFixed(1) + '% at ' + time + '</title></circle>';
+    if (labelAt.has(i)) {
+      const anchor = i === n - 1 ? 'end' : (i === 0 ? 'start' : 'middle');
+      html += '<text font-size="11" fill="#7C8078" text-anchor="' + anchor + '" x="' + x + '" y="' + (H - padB + 20) + '">' + time + '</text>';
+    }
+  });
+  svg.innerHTML = html;
+}
+
 async function loadHistory() {
   try {
     const res  = await fetch('/api/history');
     const data = await res.json();
-    if (!data.length) return;
-
-    const last20 = data.slice(0, 20).reverse();
-    const svg = document.getElementById('chart-svg');
-    const W=560,H=150,padL=45,padR=15,padT=15,padB=35;
-    const rawMin=Math.min(...last20.map(r=>r.humidity));
-    const rawMax=Math.max(...last20.map(r=>r.humidity));
-    const spread=rawMax-rawMin;
-    const minH=Math.max(0, spread<5 ? rawMin-10 : rawMin-3);
-    const maxH=Math.min(100, spread<5 ? rawMax+10 : rawMax+3);
-    const n=last20.length;
-    const xPos=(i)=>padL+(i/(n-1))*(W-padL-padR);
-    const yPos=(h)=>padT+(1-(h-minH)/(maxH-minH))*(H-padT-padB);
-    const points=last20.map((r,i)=>xPos(i)+','+yPos(r.humidity));
-    const linePath='M'+points.join(' L');
-    const areaPath='M'+xPos(0)+','+yPos(minH)+' L'+points.join(' L')+' L'+xPos(n-1)+','+yPos(minH)+' Z';
-    let html='<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1D9E75" stop-opacity="0.4"/><stop offset="100%" stop-color="#1D9E75" stop-opacity="0"/></linearGradient></defs>';
-    for(let t=0;t<=4;t++){
-      const val=minH+(maxH-minH)*(t/4);
-      const y=yPos(val);
-      html+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#E5E7E0" stroke-width="1"/>';
-      html+='<text font-size="10" fill="#9A9E97" text-anchor="end" x="'+(padL-4)+'" y="'+(y+4)+'">'+Math.round(val)+'%</text>';
-    }
-    html+='<path fill="url(#areaGrad)" opacity="0.3" d="'+areaPath+'"/>';
-    html+='<path fill="none" stroke="#1D9E75" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" d="'+linePath+'"/>';
-    last20.forEach((r,i)=>{
-      const x=xPos(i),y=yPos(r.humidity);
-      const time=new Date(r.created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-      html+='<circle fill="#1D9E75" stroke="#fff" stroke-width="2" cx="'+x+'" cy="'+y+'" r="3.5" title="'+r.humidity.toFixed(1)+'% @ '+time+'"/>';
-      if(i===0||i===Math.floor(n/2)||i===n-1){
-        html+='<text font-size="10" fill="#9A9E97" text-anchor="middle" x="'+x+'" y="'+(H-padB+16)+'">'+time+'</text>';
-      }
-    });
-    svg.innerHTML=html;
+    historyRows = data.slice(0, 20).reverse();
+    drawHistory();
   } catch(e) { console.error(e); }
 }
 async function loadStats() {
@@ -333,6 +438,11 @@ async function loadStats() {
     const data = await res.json();
     document.getElementById('stat-readings').textContent = data.total_readings;
   } catch(e) {}
+}
+
+// Text from the weather service goes into the page as HTML, so escape it first.
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 // 01949 = Middleton, MA — same area as the TriTown sensors shown on the left.
@@ -373,7 +483,7 @@ async function loadForecast(zip) {
 
     if (data.error) {
       document.getElementById('forecast-place').textContent = '';
-      document.getElementById('forecast-grid').innerHTML = '<div class="forecast-loading">Could not load forecast for that ZIP code.</div>';
+      document.getElementById('forecast-grid').innerHTML = '<tr><td colspan="6" class="fc-empty">Could not load a forecast for that ZIP code. Check it and try again.</td></tr>';
       return;
     }
 
@@ -389,23 +499,23 @@ async function loadForecast(zip) {
         const t = new Date(h.time).getTime();
         return t >= start && t < end;
       });
-      let worst = 'LOW';
+      let worst = inWindow.length ? 'LOW' : 'NONE';
       inWindow.forEach(h => {
         if (order.indexOf(h.alert_level) > order.indexOf(worst)) worst = h.alert_level;
       });
-      return '<div class="forecast-card">' +
-        '<div class="forecast-day">' + p.name + '</div>' +
-        '<div class="forecast-risk ' + worst + '">' + (labels[worst] || worst) + '</div>' +
-        '<div class="forecast-temp">' + p.temperature_f + '°F</div>' +
-        '<div class="forecast-detail">' + p.short_forecast + '<br>' +
-          'Wind ' + p.wind_speed_raw + ' ' + p.wind_direction + '<br>' +
-          p.precip_chance_pct + '% precip</div>' +
-      '</div>';
+      return '<tr class="risk-' + worst + '">' +
+        '<td class="fc-day">' + esc(p.name) + '</td>' +
+        '<td class="fc-cond">' + esc(p.short_forecast) + '</td>' +
+        '<td class="fc-temp">' + esc(p.temperature_f) + '°F</td>' +
+        '<td class="fc-wind">' + esc(p.wind_speed_raw) + ' ' + esc(p.wind_direction) + '</td>' +
+        '<td class="fc-precip">' + esc(p.precip_chance_pct) + '%</td>' +
+        '<td class="fc-risk"><span class="forecast-risk ' + worst + '">' + (labels[worst] || worst) + '</span></td>' +
+      '</tr>';
     }).join('');
 
   } catch(e) {
     console.error('Error loading forecast:', e);
-    document.getElementById('forecast-grid').innerHTML = '<div class="forecast-loading">Forecast unavailable right now.</div>';
+    document.getElementById('forecast-grid').innerHTML = '<tr><td colspan="6" class="fc-empty">The forecast is unavailable right now. Try again in a few minutes.</td></tr>';
   }
 }
 
@@ -415,9 +525,12 @@ function toggleDisplay() {
 }
 
 // Init
+let resizeTimer;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawHistory, 150); });
 updateTime();
 setInterval(updateTime, 1000);
 loadData();
+drawHistory();
 loadHistory();
 loadForecast();
 setInterval(loadData, 5000);

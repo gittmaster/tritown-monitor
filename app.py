@@ -187,7 +187,7 @@ def get_forecast_route():
 
     try:
         daily = get_forecast(zip_code)
-        hourly = get_hourly_projection(zip_code, hours=72)
+        hourly = get_hourly_projection(zip_code, hours=168)
     except Exception as e:
         if cached:
             return jsonify(cached[1])  # NWS unreachable: serve last good copy
