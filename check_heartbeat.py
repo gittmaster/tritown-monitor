@@ -27,6 +27,15 @@ try:
             send_alert('No sensor data for %.0f minutes! Check Pi at Middleton Fire Station.' % diff)
         else:
             print("%s OK: Last reading %.0f min ago" % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), diff))
+            # Wind check: only if wind has reported before (so a station with no
+            # wind sensor is never nagged), and only while temperature/humidity
+            # are still arriving (so one outage does not send two alerts).
+            wind_last = data.get('wind_last_seen')
+            if wind_last:
+                wind_time = datetime.strptime(wind_last.split('.')[0], '%Y-%m-%d %H:%M:%S')
+                wind_diff = (datetime.utcnow() - wind_time).total_seconds() / 60
+                if wind_diff > 30:
+                    send_alert('Wind sensor has stopped reporting for %.0f minutes. Temperature and humidity are still OK. Check the wind sensor and its USB adapter at Middleton Fire Station.' % wind_diff)
     else:
         send_alert('No data in database! Dashboard may be down.')
 except Exception as e:

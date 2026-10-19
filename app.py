@@ -52,6 +52,17 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    # Wind columns (added later). Additive only: old rows get NULL, and older
+    # versions of this app simply ignore the extra columns, so a rollback of
+    # the code never needs a database change.
+    for col in ('wind_speed', 'wind_direction'):
+        if is_pg():
+            cur.execute('ALTER TABLE readings ADD COLUMN IF NOT EXISTS %s REAL' % col)
+        else:
+            cur.execute('PRAGMA table_info(readings)')
+            existing = [row[1] for row in cur.fetchall()]
+            if col not in existing:
+                cur.execute('ALTER TABLE readings ADD COLUMN %s REAL' % col)
     conn.commit()
     cur.close()
     conn.close()
@@ -79,6 +90,20 @@ def get_alert(temp_c, humidity, pressure=None, wind_speed=None):
     else:
         return 'LOW', 'LOW - Wildfire ignitions unlikely. Outdoor burning is safest.'
 
+def clean_wind(value, low, high):
+    """Return value as a float if it is a sane number in [low, high], else None.
+    A bad wind sensor must never block the temperature/humidity reading, so a
+    bad or missing wind value is quietly stored as NULL instead of rejected."""
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return None
+    if v != v or v < low or v > high:  # v != v catches NaN
+        return None
+    return v
+
 @app.route('/api/reading', methods=['POST'])
 def post_reading():
     if request.headers.get('X-API-Key') != API_KEY:
@@ -88,15 +113,16 @@ def post_reading():
     humidity = d.get('humidity')
     pressure = d.get('pressure')
     dew_point = d.get('dew_point')
-    wind_speed = d.get('wind_speed')
+    wind_speed = clean_wind(d.get('wind_speed'), 0, 200)          # mph
+    wind_direction = clean_wind(d.get('wind_direction'), 0, 360)  # degrees
     level, message = get_alert(temp, humidity, pressure, wind_speed)
     rid = str(uuid.uuid4())
     p = ph()
     conn = get_db()
     cur = conn.cursor()
     cur.execute(
-        'INSERT INTO readings (id,device_id,location,temperature,humidity,pressure,dew_point,alert_level,alert_message) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)' % tuple([p]*9),
-        (rid, d.get('device_id','unknown'), d.get('location','Unknown'), temp, humidity, pressure, dew_point, level, message)
+        'INSERT INTO readings (id,device_id,location,temperature,humidity,pressure,dew_point,alert_level,alert_message,wind_speed,wind_direction) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)' % tuple([p]*11),
+        (rid, d.get('device_id','unknown'), d.get('location','Unknown'), temp, humidity, pressure, dew_point, level, message, wind_speed, wind_direction)
     )
     conn.commit()
     cur.close()
@@ -118,6 +144,22 @@ def get_latest():
     rows = [dict(r) for r in cur.fetchall()]
     cur.execute('SELECT COUNT(*) as c FROM readings')
     total = cur.fetchone()['c']
+    # When did each location last report wind? Lets the dashboard tell "this
+    # location has no wind sensor" apart from "its wind sensor stopped working".
+    # Done last and fenced off: a problem here must never break the main readings.
+    wind_seen = {}
+    try:
+        cur.execute('SELECT location, MAX(created_at) AS last_wind FROM readings '
+                    'WHERE wind_speed IS NOT NULL GROUP BY location')
+        wind_seen = {r['location']: r['last_wind'] for r in cur.fetchall()}
+    except Exception as e:
+        print("wind_last_seen lookup failed: %s" % str(e))
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+    for row in rows:
+        row['wind_last_seen'] = wind_seen.get(row['location'])
     cur.close()
     conn.close()
     return jsonify({'readings': rows, 'total_readings': total})
@@ -147,9 +189,26 @@ def get_stats():
     locations = cur.fetchone()['c']
     cur.execute('SELECT created_at FROM readings ORDER BY created_at DESC LIMIT 1')
     latest = cur.fetchone()
+    # Most recent reading that included wind (None if wind has never reported).
+    # Used by check_heartbeat.py to warn when a wind sensor goes quiet. Fenced
+    # off so it can never break the stats the heartbeat already relies on.
+    wind_last = None
+    try:
+        cur.execute('SELECT created_at FROM readings WHERE wind_speed IS NOT NULL '
+                    'ORDER BY created_at DESC LIMIT 1')
+        w = cur.fetchone()
+        wind_last = str(w['created_at']) if w else None
+    except Exception as e:
+        print("wind stats lookup failed: %s" % str(e))
+        try:
+            conn.rollback()
+        except Exception:
+            pass
     cur.close()
     conn.close()
-    return jsonify({'total_readings': total, 'locations': locations, 'last_updated': str(latest['created_at']) if latest else None})
+    return jsonify({'total_readings': total, 'locations': locations,
+                    'last_updated': str(latest['created_at']) if latest else None,
+                    'wind_last_seen': wind_last})
 
 @app.route('/api/clear', methods=['POST'])
 def clear_readings():

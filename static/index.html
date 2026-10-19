@@ -97,6 +97,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
 .reading-val+.reading-val{border-left:1px solid var(--line)}
 .reading-num{font-size:30px;font-weight:700;color:var(--ink);line-height:1.1}
 .reading-unit{font-size:12px;color:var(--gray);margin-top:4px}
+.reading-wind{display:flex;align-items:baseline;justify-content:center;gap:8px;flex-wrap:wrap;padding:9px 8px;margin-bottom:12px;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);font-size:14px;color:var(--ink)}
+.reading-wind b{font-size:18px;font-weight:700}
+.reading-wind .wind-dir{color:var(--gray)}
+.reading-wind.nodata{color:var(--muted)}
+.reading-wind.warn{color:#7D3000;background:#FFF0E6;font-weight:600}
 .reading-time{font-size:12px;color:var(--muted);text-align:right}
 .no-data{text-align:center;color:var(--muted);padding:2rem;font-size:14px;grid-column:1/-1}
 
@@ -149,6 +154,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
 .display-mode .alert-level{font-size:60px}
 .display-mode .alert-message{font-size:26px}
 .display-mode .reading-num{font-size:40px}
+.display-mode .reading-wind{font-size:18px}
+.display-mode .reading-wind b{font-size:26px}
 .display-mode .panel-title{font-size:24px}
 .display-mode .fc-table{font-size:17px}
 .display-mode .fc-table td.fc-temp{font-size:20px}
@@ -348,6 +355,27 @@ async function loadData() {
     document.getElementById('stat-updated').textContent = lastTime.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
 
     // Reading cards per location
+    const COMPASS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+    function windLine(r) {
+      if (r.wind_speed == null) {
+        // Had wind before but not in the latest reading = the sensor stopped.
+        if (r.wind_last_seen) {
+          const seen = new Date(r.wind_last_seen);
+          const when = isNaN(seen) ? '' : ' (last data ' + seen.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}) + ')';
+          return '<div class="reading-wind warn">⚠ Wind sensor not reporting' + when + '</div>';
+        }
+        return '<div class="reading-wind nodata">Wind: no data</div>';
+      }
+      const mph = Number(r.wind_speed);
+      let dir = '';
+      if (r.wind_direction != null && mph > 0) {
+        const deg = Number(r.wind_direction);
+        dir = '<span class="wind-dir">from ' + COMPASS[Math.round(deg / 22.5) % 16] + ' (' + Math.round(deg) + '°)</span>';
+      } else if (mph === 0) {
+        dir = '<span class="wind-dir">calm</span>';
+      }
+      return '<div class="reading-wind">Wind <b>' + mph.toFixed(1) + '</b> mph ' + dir + '</div>';
+    }
     document.getElementById('readings-grid').innerHTML = readings.map(r => {
       const tf = (r.temperature * 9/5 + 32).toFixed(1);
       const timeAgo = new Date(r.created_at).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
@@ -360,6 +388,7 @@ async function loadData() {
           '<div class="reading-val"><div class="reading-num">' + tf + '</div><div class="reading-unit">°F (' + r.temperature.toFixed(1) + '°C)</div></div>' +
           '<div class="reading-val"><div class="reading-num">' + r.humidity.toFixed(1) + '</div><div class="reading-unit">% Humidity</div></div>' +
         '</div>' +
+        windLine(r) +
         '<div class="reading-time">Last reading: ' + timeAgo + '</div>' +
       '</div>';
     }).join('');
