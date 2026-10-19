@@ -1,0 +1,21 @@
+# Backup watchdog: runs on GitHub's computers (not the Pi) every 30 minutes and
+# sends a phone alert if the TriTown monitor has gone silent.
+# Scheduled workflows only run from the repository's default branch, so this
+# does nothing until it has been merged there.
+name: Outside check
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:        # lets you press "Run workflow" to test it by hand
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the monitor
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}   # optional; falls back to the standard topic
+        run: python3 outside_check.py
