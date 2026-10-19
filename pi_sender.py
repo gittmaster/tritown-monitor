@@ -4,11 +4,17 @@ import time
 import sys
 import math
 import logging
+from datetime import datetime
 
 try:
     from wind_sensor import WindSensor
 except Exception:            # wind_sensor.py not copied to the Pi: wind stays off
     WindSensor = None
+
+try:
+    from reading_queue import ReadingQueue
+except Exception:            # reading_queue.py not copied to the Pi: old behaviour
+    ReadingQueue = None
 
 LOG_FILE = '/home/pi/sender.log'
 logging.basicConfig(
@@ -37,12 +43,67 @@ try:
 except Exception:             # even a broken wind reader must not stop the sender
     wind_sensor = None
 
+# Readings the website could not take (internet or website down) are saved in
+# this file and sent again, with their original time, once it is back.
+QUEUE_FILE = '/home/pi/unsent_readings.jsonl'
+QUEUE_DAYS = 60               # keep unsent readings this long, then drop the oldest
+try:
+    saved_queue = ReadingQueue(QUEUE_FILE, max_days=QUEUE_DAYS, log=logging.warning) if ReadingQueue else None
+except Exception:
+    saved_queue = None
+server_can_resend = False     # becomes True once the website says it understands resent readings
+CLOCK_TRUSTED_AFTER = 2025    # a Pi clock earlier than this has not been set yet
+
 def dew_point(temp_c, humidity):
     a, b = 17.27, 237.7
     alpha = ((a * temp_c) / (b + temp_c)) + math.log(humidity / 100.0)
     return round((b * alpha) / (a - alpha), 1)
 
+def save_for_later(payload):
+    """Keep a reading we could not deliver. Never lets a problem here escape."""
+    if not saved_queue:
+        return
+    try:
+        item = dict(payload)
+        now = datetime.utcnow()
+        if now.year >= CLOCK_TRUSTED_AFTER:      # otherwise the website stamps it on arrival
+            item['recorded_at'] = now.strftime('%Y-%m-%dT%H:%M:%S')
+        if saved_queue.add(item):
+            logging.warning("[QUEUE] saved the reading for later (%d waiting)" % saved_queue.count())
+    except Exception as e:
+        logging.error("[QUEUE] could not save reading: %s" % str(e))
+
+def post_saved(payload):
+    """One attempt to deliver a saved reading. True means: done with it."""
+    try:
+        response = requests.post(SERVER_URL, json=payload, headers={'X-API-Key': API_KEY}, timeout=15)
+    except Exception:
+        return False
+    if response.status_code == 201:
+        return True
+    if 400 <= response.status_code < 500 and response.status_code not in (401, 403, 408, 429):
+        logging.error("[QUEUE] website refused a saved reading (%d); dropping it" % response.status_code)
+        return True       # it will never be accepted, so do not let it block the others
+    return False
+
+def resend_saved():
+    """After a successful send, deliver anything saved during an outage."""
+    if not saved_queue:
+        return
+    try:
+        waiting = saved_queue.count()
+        if not waiting:
+            return
+        if not server_can_resend:
+            logging.warning("[QUEUE] %d readings waiting; the website is not updated to take them yet" % waiting)
+            return
+        sent, left = saved_queue.flush(post_saved)
+        logging.info("[QUEUE] resent %d saved readings, %d still waiting" % (sent, left))
+    except Exception as e:
+        logging.error("[QUEUE] resend problem: %s" % str(e))
+
 def send_reading(temp_c, humidity, wind=None):
+    global server_can_resend
     temp_f = temp_c * 9/5 + 32
     dp     = dew_point(temp_c, humidity)
     dp_f   = round(dp * 9/5 + 32, 1)
@@ -66,9 +127,11 @@ def send_reading(temp_c, humidity, wind=None):
             )
             if response.status_code == 201:
                 data = response.json()
+                server_can_resend = bool(data.get('supports_recorded_at'))
                 wind_txt = ("  Wind=%.1f mph @ %.0f deg" % (wind['speed_mph'], wind['direction_deg'])) if wind else "  Wind=none"
                 logging.info("[OK] Sent: Temp=%.1f F  Humidity=%.1f%%  DewPoint=%.1f F  Alert=%s%s" % (
                     temp_f, humidity, dp_f, data.get('alert_level','?'), wind_txt))
+                resend_saved()
                 return True
             else:
                 logging.warning("[WARN] Server returned: %d (attempt %d)" % (response.status_code, attempt+1))
@@ -80,6 +143,7 @@ def send_reading(temp_c, humidity, wind=None):
             logging.error("[ERROR] %s (attempt %d)" % (str(e), attempt+1))
         time.sleep(10)
     logging.error("[ERROR] Failed to send after %d attempts" % MAX_RETRIES)
+    save_for_later(payload)
     return False
 
 logging.info("TriTown Pi Sender starting...")

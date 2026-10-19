@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import os, uuid
-from datetime import datetime
+import os, uuid, time
+from datetime import datetime, timedelta
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)
@@ -27,13 +27,67 @@ def is_pg():
 def ph():
     return '%s' if is_pg() else '?'
 
+DEFAULT_RETENTION_DAYS = 60
+
+def read_retention_days(raw):
+    """How many days of readings to keep. Set RETENTION_DAYS on the host
+    (for example 30 or 90). Anything missing or silly falls back to 60."""
+    try:
+        days = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return DEFAULT_RETENTION_DAYS
+    return days if 1 <= days <= 3650 else DEFAULT_RETENTION_DAYS
+
+RETENTION_DAYS = read_retention_days(os.environ.get('RETENTION_DAYS'))
+
+def utc_text(when):
+    return when.strftime('%Y-%m-%d %H:%M:%S')
+
 def cleanup_old_readings():
+    cutoff = utc_text(datetime.utcnow() - timedelta(days=RETENTION_DAYS))
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("DELETE FROM readings WHERE created_at < NOW() - INTERVAL '7 days'")
+    cur.execute('DELETE FROM readings WHERE created_at < ' + ph(), (cutoff,))
     conn.commit()
     cur.close()
     conn.close()
+
+_last_cleanup = time.time()   # startup already cleaned; then repeat every few hours
+CLEANUP_EVERY_SECONDS = 6 * 3600
+
+def maybe_cleanup():
+    """Keep the retention rule enforced even if the site never restarts.
+    Fenced off: a cleanup problem must never block a reading."""
+    global _last_cleanup
+    if time.time() - _last_cleanup < CLEANUP_EVERY_SECONDS:
+        return
+    _last_cleanup = time.time()
+    try:
+        cleanup_old_readings()
+    except Exception as e:
+        print("Periodic cleanup failed: %s" % str(e))
+
+def parse_recorded_at(value, now=None):
+    """The Pi may resend a reading it saved during an outage and tell us when
+    it was really taken (UTC, like 2026-10-18T21:30:00). Returns (datetime, status):
+      ok       - use this time
+      none     - not provided or unreadable: caller stamps it with the current time
+      too_old  - older than we keep anyway: caller skips it
+    A time in the future is treated as unreadable (a wrong clock must not
+    put a reading ahead of real ones)."""
+    if value is None:
+        return None, 'none'
+    now = now or datetime.utcnow()
+    try:
+        text = str(value).strip().rstrip('Z').replace('T', ' ').split('.')[0]
+        when = datetime.strptime(text, '%Y-%m-%d %H:%M:%S')
+    except (TypeError, ValueError):
+        return None, 'none'
+    if when > now + timedelta(minutes=10):
+        return None, 'none'
+    if when < now - timedelta(days=RETENTION_DAYS):
+        return None, 'too_old'
+    return when, 'ok'
 
 def init_db():
     conn = get_db()
@@ -118,16 +172,41 @@ def post_reading():
     level, message = get_alert(temp, humidity, pressure, wind_speed)
     rid = str(uuid.uuid4())
     p = ph()
+    device_id = d.get('device_id', 'unknown')
+    taken_at, taken_status = parse_recorded_at(d.get('recorded_at'))
+    # 'supports_recorded_at' tells the Pi this site understands saved-and-resent
+    # readings, so the Pi never resends old data to an older site version.
+    reply = {'success': True, 'alert_level': level, 'supports_recorded_at': True}
+    if taken_status == 'too_old':
+        reply['skipped'] = 'older than the retention period'
+        return jsonify(reply), 201
     conn = get_db()
     cur = conn.cursor()
-    cur.execute(
-        'INSERT INTO readings (id,device_id,location,temperature,humidity,pressure,dew_point,alert_level,alert_message,wind_speed,wind_direction) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)' % tuple([p]*11),
-        (rid, d.get('device_id','unknown'), d.get('location','Unknown'), temp, humidity, pressure, dew_point, level, message, wind_speed, wind_direction)
-    )
+    if taken_at is not None:
+        # A resent reading: if we already have it (the first reply was lost on
+        # the way back), do not store it twice.
+        stamp = utc_text(taken_at)
+        cur.execute('SELECT 1 FROM readings WHERE device_id=' + p + ' AND created_at=' + p + ' AND temperature=' + p + ' LIMIT 1',
+                    (device_id, stamp, temp))
+        if cur.fetchone():
+            cur.close()
+            conn.close()
+            reply['duplicate'] = True
+            return jsonify(reply), 201
+        cur.execute(
+            'INSERT INTO readings (id,device_id,location,temperature,humidity,pressure,dew_point,alert_level,alert_message,wind_speed,wind_direction,created_at) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)' % tuple([p]*12),
+            (rid, device_id, d.get('location','Unknown'), temp, humidity, pressure, dew_point, level, message, wind_speed, wind_direction, stamp)
+        )
+    else:
+        cur.execute(
+            'INSERT INTO readings (id,device_id,location,temperature,humidity,pressure,dew_point,alert_level,alert_message,wind_speed,wind_direction) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)' % tuple([p]*11),
+            (rid, device_id, d.get('location','Unknown'), temp, humidity, pressure, dew_point, level, message, wind_speed, wind_direction)
+        )
     conn.commit()
     cur.close()
     conn.close()
-    return jsonify({'success': True, 'alert_level': level}), 201
+    maybe_cleanup()
+    return jsonify(reply), 201
 
 @app.route('/api/latest', methods=['GET'])
 def get_latest():
@@ -208,7 +287,8 @@ def get_stats():
     conn.close()
     return jsonify({'total_readings': total, 'locations': locations,
                     'last_updated': str(latest['created_at']) if latest else None,
-                    'wind_last_seen': wind_last})
+                    'wind_last_seen': wind_last,
+                    'retention_days': RETENTION_DAYS})
 
 @app.route('/api/clear', methods=['POST'])
 def clear_readings():
