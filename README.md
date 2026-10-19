@@ -49,3 +49,14 @@ To switch back to the original alert rule, set `ALERT_METHOD` to `legacy` (or de
 4. Leave `ALERT_METHOD` on `legacy` until the fire department has confirmed the chart answers.
 
 Always install the website first, then the Pi: the Pi only resends saved readings to a website that says it understands them.
+
+## Assumptions we made (also in the presentation)
+
+We did not wait for answers on these; we picked the most sensible option and listed it for the fire department. If they want something different, we change it.
+
+- Grass stage: Transition until the district announces a change (`HERBACEOUS_STAGE`).
+- Wind: rounded to whole mph, averaged over 30 seconds every 5 minutes, used as measured (the chart assumes 20-foot winds).
+- Classes 1 to 5 are shown as Low, Moderate, High, Very High, Extreme.
+- No wind reading: the original rule is used and the message says wind is missing.
+- Our copy of the chart gives fuel moisture 28 (the chief wrote 29) for 63F, 85%, Green; the class is the same.
+- Readings are kept 60 days (`RETENTION_DAYS`).

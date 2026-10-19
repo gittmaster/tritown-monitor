@@ -12,9 +12,13 @@ be checked against the paper copy. validate_tables() proves the typing is
 self-consistent (used by the tests). Nothing here touches the network or the
 database, and nothing in the live site uses it unless ALERT_METHOD=class_day.
 
-OPEN QUESTIONS for the fire department:
-  * whole-mph rounding of wind, and the wind averaging period / sensor height
-  * whether the class names below are what they call classes 1 to 5
+ASSUMPTIONS (decided by us; listed in the presentation; easy to change):
+  * grass stage is Transition until the district announces a change (HERBACEOUS_STAGE)
+  * wind is rounded to the nearest whole mph and averaged over 30 seconds
+  * the chart expects 20-foot winds; the sensor reading is used as is
+  * classes 1 to 5 are shown as Low, Moderate, High, Very High, Extreme
+  * with no wind reading, the original rule is used and the message says so
+  * a printed row marked X uses the repeated row next to it, as the chart note says
 """
 
 # ---------------------------------------------------------------- Chart A
