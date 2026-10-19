@@ -102,6 +102,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
 .reading-wind .wind-dir{color:var(--gray)}
 .reading-wind.nodata{color:var(--muted)}
 .reading-wind.warn{color:#7D3000;background:#FFF0E6;font-weight:600}
+.reading-alert{padding:9px 10px;margin-bottom:12px;border-radius:6px;font-size:14px;line-height:1.4;color:#7D3000;background:#FFF0E6;font-weight:600}
 .reading-time{font-size:12px;color:var(--muted);text-align:right}
 .no-data{text-align:center;color:var(--muted);padding:2rem;font-size:14px;grid-column:1/-1}
 
@@ -155,6 +156,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
 .display-mode .alert-message{font-size:26px}
 .display-mode .reading-num{font-size:40px}
 .display-mode .reading-wind{font-size:18px}
+.display-mode .reading-alert{font-size:18px}
 .display-mode .reading-wind b{font-size:26px}
 .display-mode .panel-title{font-size:24px}
 .display-mode .fc-table{font-size:17px}
@@ -376,6 +378,33 @@ async function loadData() {
       }
       return '<div class="reading-wind">Wind <b>' + mph.toFixed(1) + '</b> mph ' + dir + '</div>';
     }
+    function parseUtc(t) {
+      // The site stores times in UTC. Some answers carry no zone marker, so add one.
+      if (typeof t === 'string' && /^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d/.test(t)) {
+        return new Date(t.replace(' ', 'T').split('.')[0] + 'Z');
+      }
+      return new Date(t);
+    }
+    function esc(t) {
+      return String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+    function howLong(mins) {
+      if (mins < 120) return Math.round(mins) + ' minutes';
+      if (mins < 48 * 60) return Math.round(mins / 60) + ' hours';
+      return Math.round(mins / 1440) + ' days';
+    }
+    function alertLines(r) {
+      let html = '';
+      const mins = (Date.now() - parseUtc(r.created_at).getTime()) / 60000;
+      if (!isNaN(mins) && mins > 15) {
+        html += '<div class="reading-alert">⚠ No new readings for ' + howLong(mins) +
+                '. The numbers above are old.</div>';
+      }
+      (r.device_problems || []).filter(x => x.part === 'temperature_sensor').forEach(x => {
+        html += '<div class="reading-alert">⚠ ' + esc(x.detail || 'The temperature sensor is not answering.') + '</div>';
+      });
+      return html;
+    }
     document.getElementById('readings-grid').innerHTML = readings.map(r => {
       const tf = (r.temperature * 9/5 + 32).toFixed(1);
       const timeAgo = new Date(r.created_at).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
@@ -389,6 +418,7 @@ async function loadData() {
           '<div class="reading-val"><div class="reading-num">' + r.humidity.toFixed(1) + '</div><div class="reading-unit">% Humidity</div></div>' +
         '</div>' +
         windLine(r) +
+        alertLines(r) +
         '<div class="reading-time">Last reading: ' + timeAgo + '</div>' +
       '</div>';
     }).join('');

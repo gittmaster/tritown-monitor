@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import os, uuid, time
+import os, uuid, time, json
 from datetime import datetime, timedelta
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
@@ -117,6 +117,18 @@ def init_db():
             existing = [row[1] for row in cur.fetchall()]
             if col not in existing:
                 cur.execute('ALTER TABLE readings ADD COLUMN %s REAL' % col)
+    # What the Pi says about its own health. One row per device, replaced each
+    # time it reports. Brand new table, so a code rollback needs no database change.
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS device_status (
+            device_id TEXT PRIMARY KEY,
+            location TEXT,
+            problems TEXT,
+            disk_free_mb REAL,
+            queue_waiting INTEGER,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
     cur.close()
     conn.close()
@@ -208,6 +220,67 @@ def post_reading():
     maybe_cleanup()
     return jsonify(reply), 201
 
+KNOWN_PARTS = ('temperature_sensor', 'wind_sensor')
+STATUS_FRESH_MINUTES = 180     # a problem report older than this is not shown on the dashboard
+
+def clean_problems(raw):
+    """Keep only well-formed problem notes from the Pi: a known part and short text."""
+    out = []
+    if not isinstance(raw, list):
+        return out
+    for item in raw[:10]:
+        if isinstance(item, dict) and item.get('part') in KNOWN_PARTS:
+            out.append({'part': item['part'], 'detail': str(item.get('detail', ''))[:200]})
+    return out
+
+def fresh_problems(minutes=STATUS_FRESH_MINUTES):
+    """Current problems the Pi reported recently, as a list of dicts. Never raises."""
+    try:
+        cutoff = utc_text(datetime.utcnow() - timedelta(minutes=minutes))
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('SELECT location, problems, updated_at FROM device_status WHERE updated_at >= ' + ph(), (cutoff,))
+        found = []
+        for row in cur.fetchall():
+            for prob in json.loads(row['problems'] or '[]'):
+                found.append({'location': row['location'], 'part': prob.get('part'),
+                              'detail': prob.get('detail', ''), 'updated_at': str(row['updated_at'])})
+        cur.close()
+        conn.close()
+        return found
+    except Exception as e:
+        print("device_status lookup failed: %s" % str(e))
+        try:
+            conn.rollback()
+            conn.close()
+        except Exception:
+            pass
+        return []
+
+@app.route('/api/status', methods=['POST'])
+def post_status():
+    """The Pi reports its own health here: which parts are working, how full the
+    SD card is, how many readings are waiting to be sent."""
+    if request.headers.get('X-API-Key') != API_KEY:
+        return jsonify({'error': 'Unauthorized'}), 401
+    d = request.get_json(silent=True) or {}
+    device_id = str(d.get('device_id') or 'unknown')[:100]
+    location = str(d.get('location') or 'Unknown')[:200]
+    problems = clean_problems(d.get('problems'))
+    disk = clean_wind(d.get('disk_free_mb'), 0, 10_000_000)
+    waiting = clean_wind(d.get('queue_waiting'), 0, 10_000_000)
+    waiting = int(waiting) if waiting is not None else None
+    p = ph()
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM device_status WHERE device_id=' + p, (device_id,))
+    cur.execute('INSERT INTO device_status (device_id,location,problems,disk_free_mb,queue_waiting,updated_at) VALUES (%s,%s,%s,%s,%s,%s)' % tuple([p]*6),
+                (device_id, location, json.dumps(problems), disk, waiting, utc_text(datetime.utcnow())))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'success': True, 'problems': len(problems)}), 201
+
 @app.route('/api/latest', methods=['GET'])
 def get_latest():
     conn = get_db()
@@ -241,6 +314,9 @@ def get_latest():
         row['wind_last_seen'] = wind_seen.get(row['location'])
     cur.close()
     conn.close()
+    problems = fresh_problems()
+    for row in rows:
+        row['device_problems'] = [x for x in problems if x['location'] == row['location']]
     return jsonify({'readings': rows, 'total_readings': total})
 
 @app.route('/api/history', methods=['GET'])
@@ -288,7 +364,8 @@ def get_stats():
     return jsonify({'total_readings': total, 'locations': locations,
                     'last_updated': str(latest['created_at']) if latest else None,
                     'wind_last_seen': wind_last,
-                    'retention_days': RETENTION_DAYS})
+                    'retention_days': RETENTION_DAYS,
+                    'device_problems': fresh_problems()})
 
 @app.route('/api/clear', methods=['POST'])
 def clear_readings():

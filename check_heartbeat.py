@@ -53,6 +53,18 @@ def minutes_since(text):
     return (datetime.utcnow() - when).total_seconds() / 60
 
 
+def pi_reports_problem(data, part):
+    """True if the Pi itself said, within the last 15 minutes, that this part is broken.
+    That also proves the Pi has power and internet."""
+    try:
+        for item in data.get('device_problems') or []:
+            if item.get('part') == part and minutes_since(item['updated_at']) <= 15:
+                return True
+    except Exception:
+        pass
+    return False
+
+
 def find_problem():
     """Return (kind, message) for the current problem, or (None, ok_text)."""
     try:
@@ -72,6 +84,13 @@ def find_problem():
                 'database is working. Usually fixed in under an hour.')
     diff = minutes_since(last)
     if diff > 15:
+        if pi_reports_problem(data, 'temperature_sensor'):
+            return ('silent',
+                    'PROBLEM: No sensor data for %.0f minutes! The Pi is on and online, '
+                    'but its temperature sensor is not answering, so the dashboard is '
+                    'showing old numbers. First check: the three wires and the plug on '
+                    'the temperature sensor at %s. A loose wire is the usual cause, '
+                    'about a 10 minute fix.' % (diff, STATION))
         return ('silent',
                 'PROBLEM: No sensor data for %.0f minutes! %s has stopped sending '
                 'readings, so the dashboard is showing old numbers. Most likely '

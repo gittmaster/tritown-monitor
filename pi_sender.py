@@ -3,6 +3,7 @@ import requests
 import time
 import sys
 import math
+import shutil
 import logging
 from datetime import datetime
 
@@ -102,6 +103,55 @@ def resend_saved():
     except Exception as e:
         logging.error("[QUEUE] resend problem: %s" % str(e))
 
+# Telling the website what is wrong with the Pi itself (so the dashboard and
+# your phone alert can say WHICH part failed, not just "no data").
+STATUS_URL = SERVER_URL.replace('/api/reading', '/api/status')
+TEMP_PROBLEM_AFTER = 2        # failed temperature reads in a row before we report it (about 10 min)
+WIND_PROBLEM_AFTER = 3        # silent wind readings in a row before we report it (about 15 min)
+dht_fail_streak = 0
+wind_miss_streak = 0
+last_reported_parts = ()
+
+def current_problems():
+    problems = []
+    if dht_fail_streak >= TEMP_PROBLEM_AFTER:
+        problems.append({'part': 'temperature_sensor',
+                         'detail': 'The temperature sensor has not answered for %d readings in a row. '
+                                   'Check its three wires and plug.' % dht_fail_streak})
+    if wind_sensor and wind_miss_streak >= WIND_PROBLEM_AFTER:
+        problems.append({'part': 'wind_sensor',
+                         'detail': 'The wind sensor has not answered for %d readings in a row. '
+                                   'Check the USB adapter and cable.' % wind_miss_streak})
+    return problems
+
+def free_disk_mb():
+    try:
+        return round(shutil.disk_usage('/').free / 1048576, 1)
+    except Exception:
+        return None
+
+def report_status():
+    """While anything is wrong, tell the website every cycle; tell it once when
+    everything is fine again. One quick try, never blocks, never raises."""
+    global last_reported_parts
+    problems = current_problems()
+    parts = tuple(sorted(p['part'] for p in problems))
+    if not problems and not last_reported_parts:
+        return                      # healthy and nothing to clear
+    payload = {'device_id': DEVICE_ID, 'location': LOCATION, 'problems': problems,
+               'disk_free_mb': free_disk_mb(),
+               'queue_waiting': saved_queue.count() if saved_queue else 0}
+    try:
+        response = requests.post(STATUS_URL, json=payload, headers={'X-API-Key': API_KEY}, timeout=10)
+        if response.status_code == 201:
+            last_reported_parts = parts
+            if problems:
+                logging.warning("[STATUS] reported: %s" % ", ".join(parts))
+            else:
+                logging.info("[STATUS] reported all sensors OK again")
+    except Exception as e:
+        logging.info("[STATUS] could not report (will retry): %s" % str(e))
+
 def send_reading(temp_c, humidity, wind=None):
     global server_can_resend
     temp_f = temp_c * 9/5 + 32
@@ -163,6 +213,9 @@ while True:
                     wind = wind_sensor.read_average(WIND_WINDOW_SECONDS)
                 except Exception as e:   # belt and braces: never let wind stop the send
                     logging.warning("[WIND] skipped: %s" % str(e))
+            dht_fail_streak = 0
+            if wind_sensor:
+                wind_miss_streak = 0 if wind else wind_miss_streak + 1
             success = send_reading(temp_c, humidity, wind)
             if success:
                 consecutive_failures = 0
@@ -170,6 +223,7 @@ while True:
                 consecutive_failures += 1
         else:
             logging.error("[ERROR] DHT22 read failed")
+            dht_fail_streak += 1
             consecutive_failures += 1
 
         if consecutive_failures >= 10:
@@ -179,5 +233,10 @@ while True:
     except Exception as e:
         logging.error("[ERROR] Unexpected: %s" % str(e))
         consecutive_failures += 1
+
+    try:
+        report_status()
+    except Exception as e:
+        logging.warning("[STATUS] problem: %s" % str(e))
 
     time.sleep(INTERVAL)
