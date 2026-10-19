@@ -29,3 +29,23 @@
 - Raspberry Pi password changed from default
 - API key required for all write operations
 - Google Analytics Measurement ID stored securely
+
+## Settings (set on Render, under Environment)
+
+| Setting | What it does | Default |
+|---|---|---|
+| `RETENTION_DAYS` | Days of readings the website keeps (1 to 3650). | 60 |
+| `ALERT_METHOD` | `legacy` = original rule. `class_day` = the fire chief's method (Chart A + Chart D). | legacy |
+| `HERBACEOUS_STAGE` | `cured`, `transition` or `green`. Only used by `class_day`. Change when the district changes the season. | transition |
+| `NTFY_TOPIC` (GitHub secret) | Phone-alert topic for the outside check. Optional. | the standard topic |
+
+To switch back to the original alert rule, set `ALERT_METHOD` to `legacy` (or delete it). Nothing else changes.
+
+## Installing the wind / resilience update (in this order)
+
+1. Merge the feature branch and let Render deploy. Check the dashboard right away. The new database columns/tables are additions only, so rolling back needs no database change (rollback tag: `pre-class-day`).
+2. Back up the Pi's schedule (`crontab -l > ~/crontab.backup`), then copy `pi_sender.py`, `wind_sensor.py`, `reading_queue.py` and `check_heartbeat.py` to `/home/pi/`, `pip3 install pyserial`, and restart with `sudo systemctl restart pi-sender`.
+3. Remove the two redundant lines from the Pi's crontab (`@reboot ... pi_sender.py` and the `pgrep` watchdog). The `pi-sender` system service already starts and restarts the sender.
+4. Leave `ALERT_METHOD` on `legacy` until the fire department has confirmed the chart answers.
+
+Always install the website first, then the Pi: the Pi only resends saved readings to a website that says it understands them.

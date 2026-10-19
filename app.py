@@ -156,6 +156,35 @@ def get_alert(temp_c, humidity, pressure=None, wind_speed=None):
     else:
         return 'LOW', 'LOW - Wildfire ignitions unlikely. Outdoor burning is safest.'
 
+# Which fire danger calculation the live site uses. Set ALERT_METHOD=class_day on
+# the host to switch to the fire chief's method; leave it unset (or set it to
+# "legacy") for the original rule. Switching back is just changing the setting.
+ALERT_METHOD = os.environ.get('ALERT_METHOD', 'legacy').strip().lower()
+HERBACEOUS_STAGE = os.environ.get('HERBACEOUS_STAGE', 'transition').strip().lower()
+try:
+    import class_day
+    if HERBACEOUS_STAGE not in class_day.STAGES:
+        HERBACEOUS_STAGE = 'transition'
+except Exception as e:           # class_day.py missing: the original rule keeps working
+    class_day = None
+    print("class_day unavailable: %s" % str(e))
+
+def alert_for_reading(temp_c, humidity, pressure, wind_speed):
+    """Fire danger level and message for one reading, using the chosen method.
+    Any problem in the new method falls back to the original rule."""
+    if ALERT_METHOD == 'class_day' and class_day is not None:
+        try:
+            result = class_day.assess(temp_c, humidity, wind_speed, HERBACEOUS_STAGE)
+            if result['level']:
+                return result['level'], result['message']
+            # No wind reading: the chief's method needs wind, so use the original
+            # rule and say plainly that wind was missing.
+            level, message = get_alert(temp_c, humidity, pressure, wind_speed)
+            return level, 'Wind data not available (estimated from temperature and humidity only). ' + message
+        except Exception as e:
+            print("class_day failed, using the original rule: %s" % str(e))
+    return get_alert(temp_c, humidity, pressure, wind_speed)
+
 def clean_wind(value, low, high):
     """Return value as a float if it is a sane number in [low, high], else None.
     A bad wind sensor must never block the temperature/humidity reading, so a
@@ -181,7 +210,7 @@ def post_reading():
     dew_point = d.get('dew_point')
     wind_speed = clean_wind(d.get('wind_speed'), 0, 200)          # mph
     wind_direction = clean_wind(d.get('wind_direction'), 0, 360)  # degrees
-    level, message = get_alert(temp, humidity, pressure, wind_speed)
+    level, message = alert_for_reading(temp, humidity, pressure, wind_speed)
     rid = str(uuid.uuid4())
     p = ph()
     device_id = d.get('device_id', 'unknown')
@@ -365,6 +394,8 @@ def get_stats():
                     'last_updated': str(latest['created_at']) if latest else None,
                     'wind_last_seen': wind_last,
                     'retention_days': RETENTION_DAYS,
+                    'alert_method': 'class_day' if (ALERT_METHOD == 'class_day' and class_day is not None) else 'legacy',
+                    'herbaceous_stage': HERBACEOUS_STAGE,
                     'device_problems': fresh_problems()})
 
 @app.route('/api/clear', methods=['POST'])
@@ -410,9 +441,9 @@ def get_forecast_route():
         return jsonify({'error': f'Could not fetch forecast: {e}'}), 502
 
     for hour in hourly['hours']:
-        level, message = get_alert(
-            hour['temperature_c'], hour['humidity_pct'],
-            wind_speed=hour['wind_speed_mph'],
+        level, message = alert_for_reading(
+            hour['temperature_c'], hour['humidity_pct'], None,
+            hour['wind_speed_mph'],
         )
         hour['alert_level'] = level
         hour['alert_message'] = message
