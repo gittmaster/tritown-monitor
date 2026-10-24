@@ -46,6 +46,7 @@ Built by a high-school student as a community capstone project for the Middleton
 | `reading_queue.py` | Pi | Saves unsent readings to disk (60 days, size and SD-card limits) and resends them in order |
 | `check_heartbeat.py` | Pi (cron) | Every 15 minutes: sends a plain-language phone alert if data stops, and an all-clear when it recovers |
 | `outside_check.py` + `.github/workflows/outside-check.yml` | GitHub | Backup watchdog that runs off the Pi, so it can warn you even if the Pi loses power or WiFi |
+| `wifi_watchdog.sh` | Pi (cron) | Every 5 minutes: restarts WiFi if the internet is down, reboots if that fails |
 | `wind_probe.py` | Pi or PC | Read-only test of the wind sensor; never changes a sensor setting |
 | `pi-sender.service` | Pi | systemd service that starts `pi_sender.py` at boot and restarts it if it stops |
 | `crontab.new` | Pi | Reference crontab (keep-awake ping and WiFi watchdog) |

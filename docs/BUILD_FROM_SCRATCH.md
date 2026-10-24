@@ -121,13 +121,13 @@ Follow [WIND_SENSOR.md](WIND_SENSOR.md): wiring, polarity check, and the `wind_p
 Copy these files from the repository into `/home/pi/` (WinSCP, `scp`, or `git clone` on the Pi):
 
 ```
-pi_sender.py  wind_sensor.py  reading_queue.py  check_heartbeat.py  wind_probe.py
+pi_sender.py  wind_sensor.py  reading_queue.py  check_heartbeat.py  wind_probe.py  wifi_watchdog.sh
 ```
 
 Example from a Windows PowerShell window in the project folder:
 
 ```
-scp pi_sender.py wind_sensor.py reading_queue.py check_heartbeat.py wind_probe.py pi@10.0.0.97:/home/pi/
+scp pi_sender.py wind_sensor.py reading_queue.py check_heartbeat.py wind_probe.py wifi_watchdog.sh pi@10.0.0.97:/home/pi/
 ```
 
 Now open `pi_sender.py` on the Pi (`nano /home/pi/pi_sender.py`) and edit the settings at the top:
@@ -189,24 +189,14 @@ Add these lines (replace the website address with yours):
 
 `crontab.new` in the repository is a reference copy of the first two.
 
-**WiFi watchdog script.** The Pi's WiFi can drop and stay down. Create `/home/pi/wifi_watchdog.sh` and make it runnable with `chmod +x /home/pi/wifi_watchdog.sh`. This is a simple example that does the job (our own copy is similar; compare and adjust):
+**WiFi watchdog script.** The Pi's WiFi can drop and stay down. `wifi_watchdog.sh` in the repository is the one we run: copy it to the Pi and make it runnable.
 
 ```bash
-#!/bin/bash
-# If the internet is unreachable, restart WiFi; if still unreachable, reboot.
-LOG=/home/pi/wifi_watchdog.log
-if ! ping -c 2 -W 5 8.8.8.8 > /dev/null 2>&1; then
-    echo "$(date) no network, restarting wlan0" >> $LOG
-    sudo ip link set wlan0 down
-    sleep 5
-    sudo ip link set wlan0 up
-    sleep 30
-    if ! ping -c 2 -W 5 8.8.8.8 > /dev/null 2>&1; then
-        echo "$(date) still down, rebooting" >> $LOG
-        sudo reboot
-    fi
-fi
+scp wifi_watchdog.sh pi@YOUR-PI:/home/pi/     # from your computer
+chmod +x /home/pi/wifi_watchdog.sh            # on the Pi
 ```
+
+It pings the internet; if that fails it restarts WiFi, and if that fails too it reboots the Pi. It logs to `/home/pi/wifi_watchdog.log`.
 
 **Check:** wait 15 minutes, then `tail /home/pi/heartbeat.log`. It should show it checked and found data.
 
