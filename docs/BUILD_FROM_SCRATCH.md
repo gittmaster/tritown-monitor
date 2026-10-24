@@ -107,10 +107,12 @@ Pin numbers count along the Pi's two rows of pins; pin 1 is the corner pin neare
 
 ```bash
 sudo apt install -y python3-pip python3-dev libgpiod2
-sudo pip3 install --break-system-packages Adafruit_DHT requests pyserial
+sudo pip3 install --break-system-packages -r requirements-pi.txt
 ```
 
 Note: `Adafruit_DHT` is an older library. If it will not install on your Pi OS version, tell me; the code would need the newer `adafruit_dht` library, which is a small change in `pi_sender.py`.
+
+(All the Pi's libraries are listed in `requirements-pi.txt`. After copying the repository files to the Pi you can instead run `bash setup_pi.sh`, which does 2.3, 2.5's copying and 2.7 in one go; you still edit the settings in `pi_sender.py` first and add the cron lines in 2.8.)
 
 ### 2.4 Wire and test the wind sensor
 

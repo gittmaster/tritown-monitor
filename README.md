@@ -50,10 +50,15 @@ Built by a high-school student as a community capstone project for the Middleton
 | `wind_probe.py` | Pi or PC | Read-only test of the wind sensor; never changes a sensor setting |
 | `pi-sender.service` | Pi | systemd service that starts `pi_sender.py` at boot and restarts it if it stops |
 | `crontab.new` | Pi | Reference crontab (keep-awake ping and WiFi watchdog) |
-| `render.yaml`, `requirements.txt` | Render | Deployment settings and Python packages |
+| `render.yaml`, `requirements.txt` | Render / any PC | Deployment settings and the website's Python packages |
+| `requirements-pi.txt` | Pi | Python packages the Pi needs (Adafruit_DHT, pyserial, requests) |
+| `setup_laptop.bat` | Windows PC | One click: private Python environment, installs packages, runs the tests |
+| `setup_pi.sh` | Pi | One step: installs packages, copies files, starts the sender service |
 | `test_*.py` | Any PC | Offline tests (see Testing below) |
 
 ## Quick start (run the website on your own computer)
+
+On Windows you can double-click `setup_laptop.bat` (needs Python 3 installed) instead of typing the first four lines below; it also runs the tests.
 
 ```bash
 git clone https://github.com/gittmaster/tritown-monitor.git
