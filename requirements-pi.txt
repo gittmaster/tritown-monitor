@@ -1,0 +1,6 @@
+# Libraries the Raspberry Pi needs (pi_sender.py, wind_sensor.py, check_heartbeat.py).
+# Install on the Pi with:  sudo pip3 install --break-system-packages -r requirements-pi.txt
+# (setup_pi.sh does this for you.)
+requests
+pyserial
+Adafruit_DHT
