@@ -23,6 +23,11 @@ Built by a high-school student as a community capstone project for the Middleton
 3. **Alerts** are calculated by one of two methods (see [docs/ALERTS.md](docs/ALERTS.md)): the original simple rule (`legacy`) or the fire chief's class-day charts (`class_day`).
 4. **Watchdogs** tell the owner by phone notification when anything stops working, and say which part failed (see [docs/RELIABILITY.md](docs/RELIABILITY.md)).
 
+## Reading the dashboard
+
+- **Current conditions.** The page checks the website every 5 seconds, but the sensor only reports **every 5 minutes**, so the numbers change at most that often. "Last updated" shows when the newest reading arrived. Wind shows "calm" when there is no wind, because a vane with no wind points nowhere. An amber warning appears if readings are more than 15 minutes old or a sensor has stopped answering.
+- **Fire weather forecast.** This is a **projection, not a measurement**. Each day shows the *highest* fire risk expected during any single hour, worked out from the National Weather Service hourly forecast with the same method as live readings, so most of that day may be calmer. The next 3 days are shown normally; days 4 to 7 sit under an "Outlook, less certain" divider with softer styling, because forecasts are less reliable further out. A note under the table links to the National Weather Service Boston/Norton forecast for official warnings.
+
 ## Documentation
 
 | Guide | What is in it |
@@ -139,11 +144,22 @@ Notes:
 
 Always update the website before the Pi: the Pi only resends saved readings to a website that says it understands them.
 
+## Release tags (rollback points)
+
+Each tag is a known-good point you can return to (`git checkout <tag>`, or `git reset --hard <tag>` on master followed by a push). Newest first:
+
+| Tag | What it is |
+|---|---|
+| `pre-forecast-wording` | Before the dashboard wording changes (sensor reports every 5 minutes; forecast marked as a projection) |
+| `pre-deps-merge`, `pre-docs-merge` | Before the dependency files and the documentation were added (no program code changed) |
+| `class-day-built`, `pre-class-day` | The fire chief's method added, and the state just before it |
+| `pre-layout-polish`, `pre-weather-upgrade` | Before the dashboard layout and 7-day forecast updates |
+
 ## Known limits
 
 - One station, one location (the system supports several, but only one is deployed).
 - The wind sensor is mounted lower than the 20 feet the fire chart assumes, so it reads lighter winds than the chart's standard. See [docs/WIND_SENSOR.md](docs/WIND_SENSOR.md).
-- The forecast panel uses National Weather Service forecasts, not the local sensor.
+- The forecast panel uses National Weather Service forecasts, not the local sensor, and shows the worst hour of each day, so it reads on the cautious side. It is a projection and says so on the page.
 - The free hosting tiers (Render, Supabase) can pause or sleep; the keep-awake ping and the outside check exist for that reason.
 
 ## Assumptions we made (also listed in the presentation)
@@ -156,4 +172,5 @@ We did not wait for answers on these; we picked the most sensible option and lis
 - With no wind reading, the original rule is used and the message says wind is missing.
 - Our copy of Chart A gives fuel moisture 28 (the chief wrote 29) for 63 F, 85 %, Green; the class is the same.
 - Readings are kept 60 days (`RETENTION_DAYS`).
+- The forecast shows the highest-risk hour of each day; days 4 to 7 are labelled "Outlook, less certain".
 - The method is stricter than the original rule: breezy days can read Very High where the original rule said Low.

@@ -79,7 +79,7 @@ Small health summary used by the watchdogs:
 
 ## `GET /api/forecast?zip=01949`
 
-The 7-day National Weather Service forecast for a five-digit ZIP code (default 01949, Middleton MA), with a fire danger level for every forecast hour, calculated with the same method as live readings. Replies are cached for 30 minutes. A ZIP that is not exactly five digits returns `400`; if the weather service cannot be reached it returns the last good copy, or `502`.
+The 7-day National Weather Service forecast for a five-digit ZIP code (default 01949, Middleton MA), with a fire danger level for every forecast hour, calculated with the same method as live readings. The dashboard shows the highest level of any hour in each day and marks days 4 to 7 as "Outlook, less certain"; the API itself returns every hour. Replies are cached for 30 minutes. A ZIP that is not exactly five digits returns `400`; if the weather service cannot be reached it returns the last good copy, or `502`.
 
 ## `POST /api/clear` (key required)
 
