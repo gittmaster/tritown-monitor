@@ -141,6 +141,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
 .forecast-risk.VERY_HIGH{background:#FDEDEC;color:var(--red)}
 .forecast-risk.EXTREME{background:#7B241C;color:#fff}
 .forecast-risk.NONE{background:#EEF0EA;color:#6B6F67}
+.fc-table tr.fc-divider td{padding:8px 20px;font-size:12px;font-weight:600;color:var(--muted);background:#F5F6F2;text-align:left !important;letter-spacing:.02em}
+.fc-table tr.fc-outlook td.fc-cond,.fc-table tr.fc-outlook td.fc-temp,.fc-table tr.fc-outlook td.fc-wind,.fc-table tr.fc-outlook td.fc-precip,.fc-table tr.fc-outlook td.fc-day{opacity:.75}
+.fc-table tr.fc-outlook .forecast-risk{opacity:.8;border:1px dashed currentColor}
+.fc-note a{color:inherit;text-decoration:underline}
 .fc-note{margin-top:auto;padding:12px 20px 14px;font-size:12px;color:var(--muted);line-height:1.5;border-top:1px solid var(--line-soft)}
 
 /* ── Humidity trend: full-width band ── */
@@ -198,6 +202,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
   .fc-table td.fc-risk{grid-area:risk;justify-self:end}
   .fc-table td.fc-cond{display:none}
   .fc-table td.fc-empty{grid-column:1 / -1;padding:2rem 0 !important}
+  .fc-table tr.fc-divider{display:block;padding:0;box-shadow:none;background:#F5F6F2}
+  .fc-table tr.fc-divider td{padding:8px 14px !important}
 }
 </style>
 </head>
@@ -253,7 +259,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
       <section class="panel panel-forecast" aria-labelledby="forecast-title">
         <div class="panel-head">
           <h2 class="panel-title" id="forecast-title">Fire weather forecast</h2>
-          <span class="panel-meta">Next 7 days, from the National Weather Service</span>
+          <span class="panel-meta">Highest-risk hour of each day, from National Weather Service forecasts</span>
         </div>
 
         <div class="panel-toolbar">
@@ -281,7 +287,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
           </tbody>
         </table>
 
-        <p class="fc-note">Fire risk is the highest hourly level forecast for that day. Days without enough forecast data show no estimate. The default ZIP code is the TriTown sensor area.</p>
+        <p class="fc-note"><strong>This is a projection, not a measurement.</strong> Each day shows the highest fire risk expected during any single hour, worked out from the weather forecast, so most of the day may be calmer. Forecasts are most reliable for the next two or three days and can change. For official fire weather warnings, see the <a href="https://www.weather.gov/box/" target="_blank" rel="noopener">National Weather Service Boston/Norton forecast</a> and follow Fire Marshal guidance. Days without enough forecast data show no estimate.</p>
       </section>
 
     </div>
@@ -551,7 +557,7 @@ async function loadForecast(zip) {
     const order = ['LOW','MODERATE','HIGH','VERY_HIGH','EXTREME'];
     const daily = (data.daily || []).filter(p => p.is_daytime).slice(0, 7);
 
-    document.getElementById('forecast-grid').innerHTML = daily.map(p => {
+    document.getElementById('forecast-grid').innerHTML = daily.map((p, i) => {
       const start = new Date(p.start_time).getTime();
       const end   = new Date(p.end_time).getTime();
       const inWindow = (data.hourly || []).filter(h => {
@@ -562,7 +568,9 @@ async function loadForecast(zip) {
       inWindow.forEach(h => {
         if (order.indexOf(h.alert_level) > order.indexOf(worst)) worst = h.alert_level;
       });
-      return '<tr class="risk-' + worst + '">' +
+      const outlook = i >= 3;
+      const divider = (i === 3) ? '<tr class="fc-divider"><td colspan="6">Outlook, less certain</td></tr>' : '';
+      return divider + '<tr class="risk-' + worst + (outlook ? ' fc-outlook' : '') + '">' +
         '<td class="fc-day">' + esc(p.name) + '</td>' +
         '<td class="fc-cond">' + esc(p.short_forecast) + '</td>' +
         '<td class="fc-temp">' + esc(p.temperature_f) + '°F</td>' +
