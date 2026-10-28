@@ -380,7 +380,13 @@ async function loadData() {
         const deg = Number(r.wind_direction);
         dir = '<span class="wind-dir">from ' + COMPASS[Math.round(deg / 22.5) % 16] + ' (' + Math.round(deg) + '°)</span>';
       } else if (mph === 0) {
-        dir = '<span class="wind-dir">calm</span>';
+        // No wind: still show the last direction the vane read, so the card never looks empty.
+        if (r.wind_direction != null) {
+          const deg0 = Number(r.wind_direction);
+          dir = '<span class="wind-dir">calm (last from ' + COMPASS[Math.round(deg0 / 22.5) % 16] + ')</span>';
+        } else {
+          dir = '<span class="wind-dir">calm</span>';
+        }
       }
       return '<div class="reading-wind">Wind <b>' + mph.toFixed(1) + '</b> mph ' + dir + '</div>';
     }
