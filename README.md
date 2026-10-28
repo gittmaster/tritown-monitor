@@ -25,7 +25,7 @@ Built by a high-school student as a community capstone project for the Middleton
 
 ## Reading the dashboard
 
-- **Current conditions.** The page checks the website every 5 seconds, but the sensor only reports **every 5 minutes**, so the numbers change at most that often. "Last updated" shows when the newest reading arrived. Wind shows "calm" when there is no wind, because a vane with no wind points nowhere. An amber warning appears if readings are more than 15 minutes old or a sensor has stopped answering.
+- **Current conditions.** The page checks the website every 5 seconds, but the sensor only reports **every 5 minutes**, so the numbers change at most that often. "Last updated" shows when the newest reading arrived. When there is no wind, the wind card shows "calm (last from S)": the speed is 0.0 and the letter is the last direction the vane read, so the card never looks empty. In very light wind the direction can wander; that is normal. An amber warning appears if readings are more than 15 minutes old or a sensor has stopped answering.
 - **Fire weather forecast.** This is a **projection, not a measurement**. Each day shows the *highest* fire risk expected during any single hour, worked out from the National Weather Service hourly forecast with the same method as live readings, so most of that day may be calmer. The next 3 days are shown normally; days 4 to 7 sit under an "Outlook, less certain" divider with softer styling, because forecasts are less reliable further out. A note under the table links to the National Weather Service Boston/Norton forecast for official warnings.
 
 ## Documentation
@@ -132,7 +132,7 @@ Notes:
 
 - **UptimeRobot**: pings the dashboard every 5 minutes and sends SMS/email if the website is down.
 - **ntfy.sh**: phone notifications (topic in `check_heartbeat.py` and `outside_check.py`). Install the free ntfy app and subscribe to your own topic.
-- **Render keep-awake**: the free Render plan sleeps when idle, so the Pi calls the website every 3 minutes (see `crontab.new`).
+- **Render keep-awake**: on a free Render plan the website sleeps when idle, so the Pi calls the website every 3 minutes (see `crontab.new`). Our live site runs on a paid Render instance (see "What it costs"), which stays on; the ping is kept as a cheap extra check.
 - **Google Analytics**: optional visitor statistics on the dashboard.
 
 ## Installing an update (in this order)
@@ -155,12 +155,20 @@ Each tag is a known-good point you can return to (`git checkout <tag>`, or `git 
 | `class-day-built`, `pre-class-day` | The fire chief's method added, and the state just before it |
 | `pre-layout-polish`, `pre-weather-upgrade` | Before the dashboard layout and 7-day forecast updates |
 
+## What it costs
+
+- **Spent so far:** $312.93 (hardware for one station, plus the first $5.38 of website hosting). The full parts list is in the presentation.
+- **Every month:** about **$7** for the website host on Render (a paid instance, which keeps the dashboard always on).
+- **Free:** the Supabase database (free plan, spending cap on, every invoice $0.00), UptimeRobot, GitHub and the ntfy phone alerts.
+- **Not a cost today:** if we later keep readings for much longer, the next Supabase plan would be about $25 per month. Old readings are deleted after 60 days, so at our size the free plan is enough.
+- More stations use the same website and database, so they add hardware cost only.
+
 ## Known limits
 
 - One station, one location (the system supports several, but only one is deployed).
 - The wind sensor is mounted lower than the 20 feet the fire chart assumes, so it reads lighter winds than the chart's standard. See [docs/WIND_SENSOR.md](docs/WIND_SENSOR.md).
 - The forecast panel uses National Weather Service forecasts, not the local sensor, and shows the worst hour of each day, so it reads on the cautious side. It is a projection and says so on the page.
-- The free hosting tiers (Render, Supabase) can pause or sleep; the keep-awake ping and the outside check exist for that reason.
+- Free hosting tiers can pause or sleep; the keep-awake ping and the outside check exist for that reason.
 
 ## Assumptions we made (also listed in the presentation)
 

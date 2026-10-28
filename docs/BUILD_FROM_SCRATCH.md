@@ -4,7 +4,7 @@ This guide takes you from an empty box of parts to a working station and dashboa
 
 You will set up four things:
 
-1. The **website and database** (free tiers: Render + Supabase, code on GitHub).
+1. The **website and database** (Render for the website, about $7 a month; Supabase free plan for the database; code on GitHub).
 2. The **Raspberry Pi** with its sensors.
 3. The **phone alerts**.
 4. The **backup watchdogs**.
@@ -27,7 +27,7 @@ Allow a weekend. Use your own passwords and keys everywhere; the ones in the rep
 | Weatherproof box(es), cable glands, and Cat6 cable if the wind sensor sits far from the Pi | See WIND_SENSOR.md |
 | A phone | For the ntfy app |
 
-Free accounts needed: GitHub, Render, Supabase, UptimeRobot (optional), and the free ntfy app.
+Accounts needed: GitHub (free), Render (about $7 a month for an always-on web service; a free plan exists but sleeps when idle), Supabase (free plan), UptimeRobot (optional, free), and the free ntfy app. See "What it costs" in the [README](../README.md).
 
 ---
 
@@ -40,7 +40,7 @@ Free accounts needed: GitHub, Render, Supabase, UptimeRobot (optional), and the 
 
 ### 1.2 Create the database (Supabase)
 
-The free Render web host forgets files when it restarts, so readings live in a separate database.
+Render's web host forgets files when it restarts, so readings live in a separate database.
 
 1. Create a project at <https://supabase.com>. Choose a strong database password and save it somewhere safe.
 2. In the project, press **Connect** and copy the **Session pooler** connection string. It looks like `postgresql://postgres.xxxx:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:5432/postgres`. Put your password in place of `[YOUR-PASSWORD]`.
@@ -51,7 +51,7 @@ The website creates its own tables the first time it starts. You do not need to 
 ### 1.3 Put the website on Render
 
 1. Create an account at <https://render.com> and choose **New, Web Service**, then connect your GitHub repository.
-2. Render reads `render.yaml`. If it asks, use: build command `pip install -r requirements.txt`, start command `gunicorn app:app`, free plan, branch `master`.
+2. Render reads `render.yaml`. If it asks, use: build command `pip install -r requirements.txt`, start command `gunicorn app:app`, branch `master`. Plan: the paid "Starter" instance (about $7 a month) keeps the site always on; the free plan also works but sleeps when idle.
 3. Open **Environment** and add:
 
 | Name | Value |
@@ -66,7 +66,7 @@ The website creates its own tables the first time it starts. You do not need to 
 
 **Check:** open your Render address (for example `https://your-name.onrender.com`). You should see the dashboard with no readings yet. Open `/api/stats` on the same address; it should show `total_readings: 0` and your `alert_method`.
 
-The first request after the free plan has slept takes up to a minute. That is normal and is why we add a keep-awake ping later.
+On the free plan, the first request after it has slept takes up to a minute. That is normal and is why we add a keep-awake ping later. On a paid instance this does not happen.
 
 ### 1.4 Try it on your own computer first (optional)
 
@@ -179,7 +179,7 @@ crontab -e
 Add these lines (replace the website address with yours):
 
 ```
-# Keep the free Render plan awake
+# Keep a free Render plan awake (harmless on a paid plan)
 */3 * * * * curl -s https://YOUR-NAME.onrender.com/api/stats > /dev/null
 
 # WiFi watchdog: reconnect, reboot if it cannot (script below)

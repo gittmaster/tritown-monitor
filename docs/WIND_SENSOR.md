@@ -83,7 +83,7 @@ Safety rules built in:
 - At least 3 good samples are needed in the window, or wind is skipped for that round.
 - After 3 silent rounds in a row (about 15 minutes), the Pi reports "wind sensor not answering" to the website, which shows a warning and sends a phone alert; see [RELIABILITY.md](RELIABILITY.md).
 
-When it is calm, the dashboard shows "calm" instead of a direction (a vane with no wind points anywhere, so the number would be noise).
+When it is calm (0.0 mph), the dashboard shows "calm (last from S)": the last direction the vane read, in small print, so the card never looks empty. With no wind the vane can point anywhere, so treat that letter as "last seen", not as a measurement.
 
 ## Mounting
 
@@ -130,7 +130,7 @@ Using both wires of a pair for each power line costs nothing and keeps the volta
 | `No USB serial adapter found` | Adapter not plugged in or not recognised | Re-plug it; on the Pi `ls /dev/ttyUSB*`; on Windows check Device Manager, Ports |
 | Adapter found, `No answer from the sensor` | No power, or yellow/green wrong | Check the 12 V supply is plugged in and red/black polarity; check yellow in A+ and green in B-; then try swapping yellow and green |
 | Speed stays 0.0 while spinning | Cups blocked, or the reading is between samples | Spin freely; remember the dashboard shows a 30-second average once every 5 minutes |
-| Direction is jumpy when calm | Normal: no wind means no direction | Ignore; the dashboard shows "calm" |
+| Direction is jumpy when calm | Normal: no wind means no steady direction | Ignore; the dashboard shows "calm (last from ...)" |
 | Direction is off by a fixed amount | North mark not aimed at north | Re-aim the sensor |
 | Works on a laptop but not on the Pi | pyserial missing, or the sender is asking the sensor at the same moment | `pip3 install pyserial`; stop `pi-sender` while running the probe |
 | Dashboard says "Wind sensor not reporting" | The Pi stopped getting wind (loose plug, power, adapter) | Check the USB adapter, its screw block, the 12 V supply and the joints |

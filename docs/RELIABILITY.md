@@ -12,7 +12,7 @@ The goal: if anything stops working, the owner is told **which part** failed and
 | Heartbeat (`check_heartbeat.py`, cron every 15 min) | Pi | Whether the website is still getting readings | Phone notification (ntfy), plain language, with likely cause and fix time |
 | Outside check (GitHub Actions, every 30 min) | GitHub (not the Pi) | The same, from outside, so it works when the Pi is dead | Phone notification |
 | UptimeRobot | Internet | Whether the dashboard answers | SMS and email |
-| Render keep-awake (cron every 3 min) | Pi | Keeps the free web host from sleeping | none |
+| Render keep-awake (cron every 3 min) | Pi | Keeps a free web host from sleeping (extra check on our paid host) | none |
 
 Why two watchers for "no data"? The heartbeat runs on the Pi, so it cannot speak if the Pi loses power or WiFi. The outside check runs somewhere else and can. The heartbeat speaks first for small problems (15 minutes); the outside check only speaks after 45 minutes of silence so you are not told twice for a hiccup.
 
