@@ -139,7 +139,13 @@ Now open `pi_sender.py` on the Pi (`nano /home/pi/pi_sender.py`) and edit the se
 | `DEVICE_ID` | A short name for this Pi, e.g. `pi-library` |
 | `LOCATION` | The name shown on the dashboard, e.g. `Middleton Fire Station` |
 | `SERVER_URL` | Your website address plus `/api/reading` |
-| `API_KEY` | The same secret you put in Render |
+
+The API key does **not** go in the file. Save it privately on the Pi (use the same value you put in Render):
+
+```bash
+echo 'YOUR-LONG-RANDOM-KEY' > /home/pi/.tritown_api_key
+chmod 600 /home/pi/.tritown_api_key
+```
 
 If you are building a **second** unit, give it its own `DEVICE_ID` and its own `LOCATION`; see [EMAIL_AND_LOCATIONS.md](EMAIL_AND_LOCATIONS.md).
 
@@ -257,7 +263,7 @@ Everything about what happens when something breaks is in [RELIABILITY.md](RELIA
 
 ## 6. Hardening before you call it finished
 
-- Set your own `API_KEY` on Render and in `pi_sender.py`. Do not leave `tritown2024` anywhere that matters. Remove the value from `render.yaml` (or change it) so your real key is not in the repository.
+- Keep your `API_KEY` out of the repository: it lives in Render's settings and in the Pi's private file `/home/pi/.tritown_api_key` (see 2.5). Make it long and random, for example `python -c "import secrets; print(secrets.token_hex(24))"`.
 - Change the Pi's password and keep SSH off the open internet (do not forward port 22 on your router).
 - Keep a copy of the Pi's SD card image (Imager or `dd`) once everything works.
 - Never commit `DATABASE_URL`, passwords, the Gmail app password or `.env` files. Email settings live only in Render.

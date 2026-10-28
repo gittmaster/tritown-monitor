@@ -4,6 +4,8 @@ database) while the "internet" is cut and then restored.
 Usage: python test_outage_end_to_end.py
 """
 import os
+os.environ.setdefault('API_KEY', 'test-key')            # the website and the Pi sender both read the key from settings
+os.environ.setdefault('TRITOWN_API_KEY', os.environ['API_KEY'])
 import sys
 import tempfile
 import types

@@ -6,4 +6,4 @@ services:
     startCommand: gunicorn app:app
     envVars:
       - key: API_KEY
-        value: tritown2024
+        sync: false   # set the real value in the Render dashboard, never in this file

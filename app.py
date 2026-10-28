@@ -1,11 +1,15 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import os, uuid, time, json, threading
+import os, uuid, time, json, threading, secrets
 from datetime import datetime, timedelta
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)
-API_KEY      = os.environ.get('API_KEY', 'tritown2024')
+# The password the Pi must send. It comes from the API_KEY setting, never from the code.
+# If it is not set, a random one is made for this run, so nobody (including us) can post.
+API_KEY      = os.environ.get('API_KEY') or secrets.token_hex(24)
+if not os.environ.get('API_KEY'):
+    print('WARNING: API_KEY is not set; the Pi cannot post readings until you set it.')
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
 
 def get_db():

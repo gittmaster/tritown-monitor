@@ -78,11 +78,13 @@ python app.py                  # opens at http://localhost:5000
 
 With no `DATABASE_URL` set, the app uses a local SQLite file (`monitor_v2.db`), so you do not need Postgres to try it. To see something on the dashboard, send a test reading from a second terminal:
 
+First start the website with a test key of your choosing (Windows: `set API_KEY=test` then `python app.py`; Mac/Linux: `API_KEY=test python app.py`). Then:
+
 ```bash
-python -c "import requests; r = requests.post('http://localhost:5000/api/reading', headers={'X-API-Key': 'tritown2024'}, json={'device_id': 'test', 'location': 'Test', 'temperature': 11, 'humidity': 47, 'wind_speed': 7.2, 'wind_direction': 220}); print(r.status_code, r.json())"
+python -c "import requests; r = requests.post('http://localhost:5000/api/reading', headers={'X-API-Key': 'test'}, json={'device_id': 'test', 'location': 'Test', 'temperature': 11, 'humidity': 47, 'wind_speed': 7.2, 'wind_direction': 220}); print(r.status_code, r.json())"
 ```
 
-It should print `201` and the alert level. Temperature is in degrees Celsius (11 C is about 52 F); wind speed is in mph. The built-in test API key is only for local testing; see Security.
+It should print `201` and the alert level. Temperature is in degrees Celsius (11 C is about 52 F); wind speed is in mph. Use any test key you like, and see Security.
 
 ## Settings
 
@@ -92,7 +94,7 @@ Website settings are environment variables (on Render: your service, **Environme
 |---|---|---|
 | `DATABASE_URL` | Postgres connection string (Supabase). Leave unset to use local SQLite. | unset |
 | `DB_PATH` | SQLite file name when `DATABASE_URL` is unset. | `monitor_v2.db` |
-| `API_KEY` | Secret the Pi must send to post readings. **Set your own.** | built-in test key |
+| `API_KEY` | Secret the Pi must send to post readings. Required: if it is not set, the site makes a random one and the Pi cannot post. | none |
 | `RETENTION_DAYS` | Days of readings the website keeps (1 to 3650). Old readings are removed every 6 hours. | 60 |
 | `ALERT_METHOD` | `legacy` = original rule. `class_day` = the fire chief's method. | `legacy` |
 | `HERBACEOUS_STAGE` | `cured`, `transition` or `green`. Only used by `class_day`. Change it when the district announces the season changed. | `transition` |
@@ -102,7 +104,7 @@ Website settings are environment variables (on Render: your service, **Environme
 
 To go back to the original alert rule, set `ALERT_METHOD` to `legacy` (or delete it). Nothing else changes.
 
-The Pi's settings are constants at the top of `pi_sender.py` (device name, location, website address, API key, 5-minute interval, DHT22 pin, wind port, queue file and days).
+The Pi's settings are constants at the top of `pi_sender.py` (device name, location, website address, 5-minute interval, DHT22 pin, wind port, queue file and days).
 
 ## Testing
 
@@ -127,7 +129,7 @@ Notes:
 ## Security
 
 - Posting readings, posting Pi status and clearing data all require the `X-API-Key` header. Reading data is public.
-- The repository contains a placeholder API key (in `app.py`, `pi_sender.py` and `render.yaml`) so the project runs out of the box. **For a real deployment, set your own `API_KEY` on Render and put the same value in `pi_sender.py` on the Pi, and do not commit it.** If the repository is public, treat the placeholder as already known.
+- **No password is stored in this repository.** The website reads `API_KEY` from Render's settings; the Pi reads the same value from a private file, `/home/pi/.tritown_api_key`. Never commit either. An older placeholder key was once in this repository's history, so that old value is treated as public and has been replaced.
 - Change the Pi's default password, and keep SSH access limited to people you trust.
 - Never commit `DATABASE_URL` or any password. `.env` and database files are already in `.gitignore`.
 - The dashboard is a read-only public page. The one input it accepts (a forecast ZIP code) is checked to be exactly five digits.

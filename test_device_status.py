@@ -5,6 +5,8 @@ Temporary database, pretend network, no hardware.   Usage: python test_device_st
 """
 import json
 import os
+os.environ.setdefault('API_KEY', 'test-key')            # the website and the Pi sender both read the key from settings
+os.environ.setdefault('TRITOWN_API_KEY', os.environ['API_KEY'])
 import sys
 import tempfile
 import types

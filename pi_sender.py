@@ -28,7 +28,22 @@ logging.basicConfig(
 DEVICE_ID  = 'pi-library'
 LOCATION   = 'Middleton Fire Station'
 SERVER_URL = 'https://tritown-monitor.onrender.com/api/reading'
-API_KEY    = 'tritown2024'
+def load_api_key():
+    """The password lives on the Pi only: in /home/pi/.tritown_api_key (or the TRITOWN_API_KEY setting).
+    It is never stored in the code or on GitHub."""
+    import os
+    key = os.environ.get('TRITOWN_API_KEY', '').strip()
+    if not key:
+        try:
+            with open('/home/pi/.tritown_api_key') as f:
+                key = f.read().strip()
+        except Exception:
+            key = ''
+    if not key:
+        logging.error("No API key found. Put it in /home/pi/.tritown_api_key")
+    return key
+
+API_KEY    = load_api_key()
 INTERVAL   = 300
 DHT_SENSOR = Adafruit_DHT.DHT22
 DHT_PIN    = 17
@@ -202,6 +217,10 @@ logging.info("Server   : %s" % SERVER_URL)
 logging.info("Interval : %d seconds" % INTERVAL)
 
 consecutive_failures = 0
+
+if not API_KEY:
+    print("No API key found. Put it in /home/pi/.tritown_api_key")
+    sys.exit(1)
 
 while True:
     try:

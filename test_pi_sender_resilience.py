@@ -7,9 +7,12 @@ Uses stand-ins for the Pi's temperature chip, the network and the clock, so it
 needs no hardware and takes about a second.   Usage: python test_pi_sender_resilience.py
 """
 import importlib
+import os
 import sys
 import tempfile
 import types
+
+os.environ.setdefault('TRITOWN_API_KEY', 'test-key')   # the Pi sender reads its key from settings
 from unittest.mock import MagicMock, patch
 
 passed = failed = 0
