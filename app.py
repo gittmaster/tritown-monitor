@@ -152,7 +152,7 @@ def get_alert(temp_c, humidity, pressure=None, wind_speed=None):
     elif humidity <= 30 and temp_f >= 70:
         return 'HIGH', 'HIGH - Wildfires ignite easily. Outdoor burning strongly discouraged!'
     elif humidity <= 50 and temp_f >= 60:
-        return 'MODERATE', 'MODERATE - Wildfires may occur. Restrict burning to early morning or late evening.'
+        return 'MODERATE', 'MODERATE - Open burning is prohibited. Please contact your local fire department for more details.'
     else:
         return 'LOW', 'LOW - Wildfire ignitions unlikely. Outdoor burning is safest.'
 

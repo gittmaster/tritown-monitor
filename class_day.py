@@ -255,7 +255,7 @@ def fire_class(si):
 
 MESSAGES = {
     'LOW': 'LOW - Wildfire ignitions unlikely. Outdoor burning is safest.',
-    'MODERATE': 'MODERATE - Wildfires may occur. Restrict burning to early morning or late evening.',
+    'MODERATE': 'MODERATE - Open burning is prohibited. Please contact your local fire department for more details.',
     'HIGH': 'HIGH - Wildfires ignite easily. Outdoor burning strongly discouraged!',
     'VERY_HIGH': 'VERY HIGH - Fires start easily and spread rapidly. No outdoor burning!',
     'EXTREME': 'EXTREME - Every fire could become large. No burning. Call 911 immediately!',
