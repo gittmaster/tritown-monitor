@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import os, uuid, time, json
+import os, uuid, time, json, threading
 from datetime import datetime, timedelta
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
@@ -129,6 +129,16 @@ def init_db():
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    # Spring "fire danger reached HIGH" emails that were sent, so we never send the
+    # same one twice in a row. Brand new table; a code rollback needs no database change.
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS alert_emails (
+            id TEXT PRIMARY KEY,
+            location TEXT NOT NULL,
+            level TEXT,
+            sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
     cur.close()
     conn.close()
@@ -199,6 +209,87 @@ def clean_wind(value, low, high):
         return None
     return v
 
+try:
+    import alert_email
+except Exception as e:           # alert_email.py missing: readings keep working, no emails
+    alert_email = None
+    print("alert_email unavailable: %s" % str(e))
+
+def previous_level(location):
+    """Fire danger level of the newest reading already stored for this location."""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('SELECT alert_level FROM readings WHERE location=' + ph() + ' ORDER BY created_at DESC LIMIT 1', (location,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        return row['alert_level'] if row else None
+    except Exception as e:
+        print("previous level lookup failed: %s" % str(e))
+        return None
+
+def last_alert_email(location):
+    """When we last emailed about this location (UTC datetime), or None."""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('SELECT MAX(sent_at) AS t FROM alert_emails WHERE location=' + ph(), (location,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        t = row['t'] if row else None
+        if t is None:
+            return None
+        if isinstance(t, str):
+            t = datetime.strptime(t.split('.')[0], '%Y-%m-%d %H:%M:%S')
+        return t.replace(tzinfo=None)
+    except Exception as e:
+        print("alert email lookup failed: %s" % str(e))
+        return None
+
+def record_alert_email(location, level):
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        p = ph()
+        cur.execute('INSERT INTO alert_emails (id,location,level,sent_at) VALUES (%s,%s,%s,%s)' % tuple([p]*4),
+                    (str(uuid.uuid4()), location, level, utc_text(datetime.utcnow())))
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print("could not record alert email: %s" % str(e))
+
+def send_high_alert_now(msg, settings, location, level):
+    """Runs in the background so a slow mail server can never delay a reading."""
+    try:
+        alert_email.send(msg, settings)
+        record_alert_email(location, level)
+        print("Fire danger email sent for %s (%s)" % (location, level))
+    except Exception as e:
+        print("Fire danger email failed: %s" % str(e))
+
+def maybe_send_high_alert(location, prev_level, level, temp, humidity, wind_speed, wind_direction, age_minutes):
+    """Email people when a station's level rises to HIGH or more between January and May.
+    Fenced off: any problem here is only printed, never allowed to affect a reading."""
+    try:
+        if alert_email is None:
+            return
+        s = alert_email.settings_from_env()
+        if not alert_email.configured(s):
+            return
+        local_when = alert_email.local_now()
+        if not alert_email.should_send(prev_level, level, last_alert_email(location), datetime.utcnow(),
+                                       local_when, age_minutes, s['months'], s['cooldown_hours']):
+            return
+        msg = alert_email.build_message(location, level, temp, humidity, wind_speed, wind_direction,
+                                        s['sender'], s['to'], s['dashboard_url'],
+                                        local_when.strftime('%b %d, %I:%M %p').replace(' 0', ' '))
+        threading.Thread(target=send_high_alert_now, args=(msg, s, location, level), daemon=True).start()
+    except Exception as e:
+        print("High alert check failed: %s" % str(e))
+
 @app.route('/api/reading', methods=['POST'])
 def post_reading():
     if request.headers.get('X-API-Key') != API_KEY:
@@ -221,6 +312,8 @@ def post_reading():
     if taken_status == 'too_old':
         reply['skipped'] = 'older than the retention period'
         return jsonify(reply), 201
+    location_name = d.get('location', 'Unknown')
+    prev_level = previous_level(location_name)
     conn = get_db()
     cur = conn.cursor()
     if taken_at is not None:
@@ -247,7 +340,28 @@ def post_reading():
     cur.close()
     conn.close()
     maybe_cleanup()
+    age = 0 if taken_at is None else (datetime.utcnow() - taken_at).total_seconds() / 60.0
+    maybe_send_high_alert(location_name, prev_level, level, temp, humidity, wind_speed, wind_direction, age)
     return jsonify(reply), 201
+
+@app.route('/api/test-email', methods=['POST'])
+def test_email():
+    """Send one test message to the alert list, to check the email setup. Needs the key."""
+    if request.headers.get('X-API-Key') != API_KEY:
+        return jsonify({'error': 'Unauthorized'}), 401
+    if alert_email is None:
+        return jsonify({'success': False, 'error': 'email module missing'}), 500
+    s = alert_email.settings_from_env()
+    if not alert_email.configured(s):
+        return jsonify({'success': False, 'error': 'email is not set up yet (needs ALERT_EMAIL_TO, SMTP_USER, SMTP_PASSWORD)'}), 400
+    try:
+        msg = alert_email.build_message('Test Station', 'HIGH', 12.0, 38.0, 8.0, 225.0,
+                                        s['sender'], s['to'], s['dashboard_url'], 'this is only a test')
+        msg.replace_header('Subject', 'TEST - ' + msg['Subject'])
+        alert_email.send(msg, s)
+        return jsonify({'success': True, 'sent_to': len(s['to'])})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)[:200]}), 502
 
 KNOWN_PARTS = ('temperature_sensor', 'wind_sensor')
 STATUS_FRESH_MINUTES = 180     # a problem report older than this is not shown on the dashboard
