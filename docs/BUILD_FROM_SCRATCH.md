@@ -141,6 +141,8 @@ Now open `pi_sender.py` on the Pi (`nano /home/pi/pi_sender.py`) and edit the se
 | `SERVER_URL` | Your website address plus `/api/reading` |
 | `API_KEY` | The same secret you put in Render |
 
+If you are building a **second** unit, give it its own `DEVICE_ID` and its own `LOCATION`; see [EMAIL_AND_LOCATIONS.md](EMAIL_AND_LOCATIONS.md).
+
 Save (Ctrl+O, Enter) and exit (Ctrl+X). Do the same for `API` in `check_heartbeat.py` (your address plus `/api/stats`).
 
 ### 2.6 First run by hand
@@ -214,6 +216,10 @@ It pings the internet; if that fails it restarts WiFi, and if that fails too it 
 
 The repository's topic belongs to the original owner. Replace it with your own, or the alerts will go to the wrong phone.
 
+### 3.1 Email alerts (optional, spring)
+
+To email a list of people when the fire danger reaches High (January to May), follow "Email when the fire danger reaches HIGH" in [EMAIL_AND_LOCATIONS.md](EMAIL_AND_LOCATIONS.md): make a Gmail app password, add three settings in Render, send the test message.
+
 ---
 
 ## 4. Backup watchdogs
@@ -254,7 +260,7 @@ Everything about what happens when something breaks is in [RELIABILITY.md](RELIA
 - Set your own `API_KEY` on Render and in `pi_sender.py`. Do not leave `tritown2024` anywhere that matters. Remove the value from `render.yaml` (or change it) so your real key is not in the repository.
 - Change the Pi's password and keep SSH off the open internet (do not forward port 22 on your router).
 - Keep a copy of the Pi's SD card image (Imager or `dd`) once everything works.
-- Never commit `DATABASE_URL`, passwords or `.env` files.
+- Never commit `DATABASE_URL`, passwords, the Gmail app password or `.env` files. Email settings live only in Render.
 
 ## 7. Updating later
 

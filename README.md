@@ -19,7 +19,7 @@ Built by a high-school student as a community capstone project for the Middleton
 ```
 
 1. **Pi** (`pi_sender.py`) reads the DHT22 (temperature + humidity) and the wind sensor (30-second average speed and direction) every 5 minutes and posts them to the website.
-2. **Website** (`app.py`) stores the reading, works out the fire danger level, and serves the dashboard (`static/index.html`) and a small JSON API.
+2. **Website** (`app.py`) stores the reading, works out the fire danger level, emails the list when it rises to High or worse in spring, and serves the dashboard (`static/index.html`) and a small JSON API.
 3. **Alerts** are calculated by one of two methods (see [docs/ALERTS.md](docs/ALERTS.md)): the original simple rule (`legacy`) or the fire chief's class-day charts (`class_day`).
 4. **Watchdogs** tell the owner by phone notification when anything stops working, and say which part failed (see [docs/RELIABILITY.md](docs/RELIABILITY.md)).
 
@@ -37,12 +37,14 @@ Built by a high-school student as a community capstone project for the Middleton
 | [docs/WIND_SENSOR.md](docs/WIND_SENSOR.md) | The wind sensor, wiring (including a long cable run), testing, mounting. |
 | [docs/RELIABILITY.md](docs/RELIABILITY.md) | Every failure we planned for: what you are told, how long it takes to fix, data kept during outages. |
 | [docs/API.md](docs/API.md) | The website's endpoints. |
+| [docs/EMAIL_AND_LOCATIONS.md](docs/EMAIL_AND_LOCATIONS.md) | The spring HIGH-alert email (rules, Gmail setup, test) and running more than one station (drop-down, second unit, renaming). |
 
 ## What is in this repository
 
 | File | Runs on | Purpose |
 |---|---|---|
 | `app.py` | Website | Flask app: API, alert calculation, data retention, serves the dashboard |
+| `alert_email.py` | Website | Spring email when a station's level rises to HIGH or worse (Jan to May); off until the email settings are added |
 | `class_day.py` | Website | The fire chief's Chart A + Chart D method (typed in as printed, with a self-check) |
 | `weather_forecast.py` | Website | National Weather Service forecast lookup by ZIP code |
 | `static/index.html` | Browser | The dashboard (single page; works on phones) |
@@ -94,6 +96,8 @@ Website settings are environment variables (on Render: your service, **Environme
 | `RETENTION_DAYS` | Days of readings the website keeps (1 to 3650). Old readings are removed every 6 hours. | 60 |
 | `ALERT_METHOD` | `legacy` = original rule. `class_day` = the fire chief's method. | `legacy` |
 | `HERBACEOUS_STAGE` | `cured`, `transition` or `green`. Only used by `class_day`. Change it when the district announces the season changed. | `transition` |
+| `ALERT_EMAIL_TO`, `SMTP_USER`, `SMTP_PASSWORD` | The HIGH-alert email: who gets it, the sending Gmail address, and its app password. All three needed; otherwise email is off. **Never put these on GitHub.** | unset (off) |
+| `ALERT_SEASON_MONTHS`, `ALERT_COOLDOWN_HOURS`, `SMTP_HOST`, `SMTP_PORT`, `ALERT_EMAIL_FROM`, `DASHBOARD_URL` | Optional email tuning. See [docs/EMAIL_AND_LOCATIONS.md](docs/EMAIL_AND_LOCATIONS.md). | `1-5`, `6`, Gmail, `587`, sender, our dashboard |
 | `NTFY_TOPIC` (GitHub secret) | Phone-alert topic for the outside check. Optional. | the standard topic |
 
 To go back to the original alert rule, set `ALERT_METHOD` to `legacy` (or delete it). Nothing else changes.
@@ -150,6 +154,10 @@ Each tag is a known-good point you can return to (`git checkout <tag>`, or `git 
 
 | Tag | What it is |
 |---|---|
+| `pre-high-alert-email` | Before the spring HIGH-alert email was added (code only; email is off until its settings exist) |
+| `pre-location-dropdown` | Before the Location drop-down |
+| `pre-moderate-wording` | Before the Moderate message became "Open burning is prohibited..." |
+| `pre-calm-costs-docs`, `pre-calm-direction` | Before the calm-wind display and the cost/doc updates |
 | `pre-forecast-wording` | Before the dashboard wording changes (sensor reports every 5 minutes; forecast marked as a projection) |
 | `pre-deps-merge`, `pre-docs-merge` | Before the dependency files and the documentation were added (no program code changed) |
 | `class-day-built`, `pre-class-day` | The fire chief's method added, and the state just before it |
@@ -165,7 +173,7 @@ Each tag is a known-good point you can return to (`git checkout <tag>`, or `git 
 
 ## Known limits
 
-- One station, one location (the system supports several, but only one is deployed).
+- Two stations are planned: **Home** (our test unit) and **Middleton Fire Station**. The system supports any number; the dashboard shows a Location drop-down once more than one reports. See [docs/EMAIL_AND_LOCATIONS.md](docs/EMAIL_AND_LOCATIONS.md).
 - The wind sensor is mounted lower than the 20 feet the fire chart assumes, so it reads lighter winds than the chart's standard. See [docs/WIND_SENSOR.md](docs/WIND_SENSOR.md).
 - The forecast panel uses National Weather Service forecasts, not the local sensor, and shows the worst hour of each day, so it reads on the cautious side. It is a projection and says so on the page.
 - Free hosting tiers can pause or sleep; the keep-awake ping and the outside check exist for that reason.
@@ -181,4 +189,7 @@ We did not wait for answers on these; we picked the most sensible option and lis
 - Our copy of Chart A gives fuel moisture 28 (the chief wrote 29) for 63 F, 85 %, Green; the class is the same.
 - Readings are kept 60 days (`RETENTION_DAYS`).
 - The forecast shows the highest-risk hour of each day; days 4 to 7 are labelled "Outlook, less certain".
+- Email alerts: only from January to May, only when a station's level **rises** to High or worse, at most one per station every 6 hours, to a list the Fire Marshal provides. We test with our own Gmail first.
+- The Moderate message reads "Open burning is prohibited. Please contact your local fire department for more details." (requested by the Fire Marshal).
+- The first unit is named **Home**; the unit at the fire station is named **Middleton Fire Station**.
 - The method is stricter than the original rule: breezy days can read Very High where the original rule said Low.

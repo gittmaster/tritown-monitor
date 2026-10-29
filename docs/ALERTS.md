@@ -59,7 +59,17 @@ Wind columns, in mph: `0-1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11-12, 13-15, 16-19, 20-
 | 20 to 39 | 4 | VERY HIGH |
 | 40 to 100 | 5 | EXTREME |
 
-The message under the level is the same text the original rule used for that level (`MESSAGES` in `class_day.py`).
+The message under the level is the same text the original rule used for that level (`MESSAGES` in `class_day.py`):
+
+| Level | Message shown |
+|---|---|
+| LOW | Wildfire ignitions unlikely. Outdoor burning is safest. |
+| MODERATE | Open burning is prohibited. Please contact your local fire department for more details. |
+| HIGH | Wildfires ignite easily. Outdoor burning strongly discouraged! |
+| VERY HIGH | Fires start easily and spread rapidly. No outdoor burning! |
+| EXTREME | Every fire could become large. No burning. Call 911 immediately! |
+
+The Moderate wording was changed at the Fire Marshal's request (it used to say wildfires may occur and to restrict burning to early morning or late evening). When the level rises to HIGH or worse between January and May, an email is also sent; see [EMAIL_AND_LOCATIONS.md](EMAIL_AND_LOCATIONS.md).
 
 ### Wind in the calculation
 

@@ -24,6 +24,8 @@ The Pi sends one reading.
 - `wind_speed` (0 to 200) and `wind_direction` (0 to 360) are optional. A missing or nonsense wind value is stored as empty and **never** rejects the reading.
 - `recorded_at` (UTC, `YYYY-MM-DDTHH:MM:SS`) is only sent by the Pi when it is resending a reading it had to save; live readings omit it and the website stamps them on arrival.
 
+A reading whose level has just risen to HIGH or worse can also trigger the spring alert email (sent in the background; it never changes this reply).
+
 Reply (`201`):
 
 ```json
@@ -57,6 +59,10 @@ The newest reading for each location, plus `total_readings`. Each reading includ
 ## `GET /api/history`
 
 The last 50 readings (add `?location=<name>` to filter), or the last 100 across all locations, newest first. Used for the humidity trend chart.
+
+## `POST /api/test-email` (key required)
+
+Sends one message marked `TEST - ` to the alert list, to check the email setup. Reply `{"success": true, "sent_to": 1}`. Returns `400` if email is not set up yet and `502` if the mail server refused. See [EMAIL_AND_LOCATIONS.md](EMAIL_AND_LOCATIONS.md).
 
 ## `GET /api/stats`
 
