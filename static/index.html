@@ -79,6 +79,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .stat-card{padding:14px 8px;text-align:center}
 .stat-card+.stat-card{border-left:1px solid var(--line)}
+.loc-picker{display:flex;align-items:center;gap:10px;padding:14px 20px 0;font-size:13px;color:var(--gray)}
+.loc-picker select{padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:var(--ink);background:#fff;max-width:100%}
 .stat-num{font-size:26px;font-weight:700;color:var(--green);line-height:1.15}
 .stat-label{font-size:12px;color:var(--gray);margin-top:4px}
 
@@ -250,6 +252,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);m
           <div class="stat-card"><div class="stat-num" id="stat-updated">—</div><div class="stat-label">Last updated</div></div>
         </div>
 
+        <!-- Which place to look at (only shown when there is more than one) -->
+        <div class="loc-picker" id="loc-picker" style="display:none">
+          <label for="location-select">Location</label>
+          <select id="location-select" onchange="chooseLocation(this.value)"></select>
+        </div>
+
         <!-- Per-location readings -->
         <div class="readings-grid" id="readings-grid">
           <div class="no-data">Loading sensor data...</div>
@@ -329,11 +337,50 @@ function getWorstLevel(readings) {
   return worst;
 }
 
+// Which location the page is showing: 'all' or one location's name. Remembered on this device.
+function getSavedLocation() {
+  try { return localStorage.getItem('tritown_location') || 'all'; }
+  catch(e) { return 'all'; }
+}
+let selectedLocation = getSavedLocation();
+
+// Fill the drop-down from the locations that are reporting. Hidden when there is only one.
+function syncLocationPicker(allReadings) {
+  const names = allReadings.map(r => r.location);
+  const picker = document.getElementById('loc-picker');
+  const select = document.getElementById('location-select');
+  if (selectedLocation !== 'all' && names.indexOf(selectedLocation) === -1) selectedLocation = 'all';
+  picker.style.display = names.length > 1 ? 'flex' : 'none';
+  const wanted = ['all'].concat(names);
+  const have = Array.prototype.map.call(select.options, o => o.value);
+  if (wanted.join('\u0001') !== have.join('\u0001')) {
+    select.innerHTML = '';
+    wanted.forEach(n => {
+      const opt = document.createElement('option');
+      opt.value = n;
+      opt.textContent = n === 'all' ? 'All locations' : n;
+      select.appendChild(opt);
+    });
+  }
+  select.value = selectedLocation;
+}
+
+function chooseLocation(value) {
+  selectedLocation = value || 'all';
+  try { localStorage.setItem('tritown_location', selectedLocation); } catch(e) {}
+  loadData();
+  loadHistory();
+}
+
 async function loadData() {
   try {
     const res  = await fetch('/api/latest');
     const data = await res.json();
-    const readings = data.readings;
+    // One card per location, even if two readings landed in the same second.
+    const seenLoc = {};
+    const allReadings = data.readings.filter(r => seenLoc[r.location] ? false : (seenLoc[r.location] = true));
+    syncLocationPicker(allReadings);
+    const readings = selectedLocation === 'all' ? allReadings : allReadings.filter(r => r.location === selectedLocation);
 
     if (!readings.length) {
       document.getElementById('alert-level').textContent = 'NO DATA YET';
@@ -342,8 +389,8 @@ async function loadData() {
       return;
     }
 
-    // Worst alert level across all locations
-    const worst = readings[0].alert_level;
+    // Worst alert level across the locations being shown
+    const worst = getWorstLevel(readings);
     const banner = document.getElementById('alert-banner');
     banner.className = 'alert-banner ' + worst;
     document.getElementById('alert-icon').textContent = icons[worst] || '🟢';
@@ -357,7 +404,7 @@ async function loadData() {
     document.getElementById('alert-message').textContent = msg.length > 1 ? msg[1].trim() : worstReading.alert_message;
 
     // Stats
-    document.getElementById('stat-locations').textContent = readings.length;
+    document.getElementById('stat-locations').textContent = allReadings.length;
     document.getElementById('stat-readings').textContent = data.total_readings;
     const lastTime = new Date(worstReading.created_at);
     document.getElementById('stat-updated').textContent = lastTime.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
@@ -497,9 +544,12 @@ function drawHistory() {
 
 async function loadHistory() {
   try {
-    const res  = await fetch('/api/history');
+    const url = selectedLocation === 'all' ? '/api/history' : '/api/history?location=' + encodeURIComponent(selectedLocation);
+    const res  = await fetch(url);
     const data = await res.json();
     historyRows = data.slice(0, 20).reverse();
+    document.getElementById('trend-title').textContent =
+      selectedLocation === 'all' ? 'Humidity trend' : 'Humidity trend: ' + selectedLocation;
     drawHistory();
   } catch(e) { console.error(e); }
 }
