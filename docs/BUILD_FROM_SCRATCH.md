@@ -143,9 +143,10 @@ Now open `pi_sender.py` on the Pi (`nano /home/pi/pi_sender.py`) and edit the se
 The API key does **not** go in the file. Save it privately on the Pi (use the same value you put in Render):
 
 ```bash
-echo 'YOUR-LONG-RANDOM-KEY' > /home/pi/.tritown_api_key
-chmod 600 /home/pi/.tritown_api_key
+read -s -p "Paste key then Enter: " K; echo "$K" > /home/pi/.tritown_api_key; chmod 600 /home/pi/.tritown_api_key; unset K; echo; awk '{print NR": "length($0)" characters"}' /home/pi/.tritown_api_key
 ```
+
+Paste only the key (nothing shows as you paste); the last line must say `1: 48 characters`. This keeps the key out of the Pi's command history. The full procedure, including changing the key later, is in [API_KEY.md](API_KEY.md).
 
 If you are building a **second** unit, give it its own `DEVICE_ID` and its own `LOCATION`; see [EMAIL_AND_LOCATIONS.md](EMAIL_AND_LOCATIONS.md).
 

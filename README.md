@@ -37,6 +37,7 @@ Built by a high-school student as a community capstone project for the Middleton
 | [docs/WIND_SENSOR.md](docs/WIND_SENSOR.md) | The wind sensor, wiring (including a long cable run), testing, mounting. |
 | [docs/RELIABILITY.md](docs/RELIABILITY.md) | Every failure we planned for: what you are told, how long it takes to fix, data kept during outages. |
 | [docs/API.md](docs/API.md) | The website's endpoints. |
+| [docs/API_KEY.md](docs/API_KEY.md) | The API key (the Pi's password): where it lives, how to change it, how to set it up on a new Pi, what to do if it leaks. |
 | [docs/EMAIL_AND_LOCATIONS.md](docs/EMAIL_AND_LOCATIONS.md) | The spring HIGH-alert email (rules, Gmail setup, test) and running more than one station (drop-down, second unit, renaming). |
 
 ## What is in this repository

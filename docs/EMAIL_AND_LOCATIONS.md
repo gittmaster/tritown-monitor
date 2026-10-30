@@ -47,7 +47,7 @@ Email needs a Render **paid** instance (ours is); free instances block outgoing 
 3. **Send a test message.** From PowerShell (use your own API key):
 
    ```
-   curl.exe -X POST https://tritown-monitor.onrender.com/api/test-email -H "X-API-Key: YOUR-KEY"
+   curl.exe -X POST https://tritown-monitor.onrender.com/api/test-email -H "X-API-Key: YOUR-KEY"   (YOUR-KEY is the one saved in Render; see API_KEY.md)
    ```
 
    The reply `{"success": true, "sent_to": 1}` means it went out. The subject starts with `TEST - ` so nobody mistakes it for a real alert.
@@ -90,7 +90,7 @@ Each Pi needs its **own** `DEVICE_ID`, or the website cannot tell them apart.
 ### Building the second unit
 
 1. Build it exactly as in [BUILD_FROM_SCRATCH.md](BUILD_FROM_SCRATCH.md), sections 2 and 3 (parts list, wiring, wind sensor, program files, start at boot, schedules).
-2. In `pi_sender.py` on the new Pi set `DEVICE_ID = 'pi-firestation'` and `LOCATION = 'Middleton Fire Station'`; `SERVER_URL` and `API_KEY` are the same as on the first Pi.
+2. In `pi_sender.py` on the new Pi set `DEVICE_ID = 'pi-firestation'` and `LOCATION = 'Middleton Fire Station'`; `SERVER_URL` is the same as on the first Pi. The API key is **not** in this file: save the same key in the new Pi's private file, as described in [API_KEY.md](API_KEY.md).
 3. Do the same in `check_heartbeat.py`'s settings if it names the device (it reads the website's `/api/stats`, which covers every location).
 4. Start it. The new card and the drop-down appear within 5 minutes.
 
