@@ -225,7 +225,7 @@ The repository's topic belongs to the original owner. Replace it with your own, 
 
 ### 3.1 Email alerts (optional, spring)
 
-To email a list of people when the fire danger reaches High (January to May), follow "Email when the fire danger reaches HIGH" in [EMAIL_AND_LOCATIONS.md](EMAIL_AND_LOCATIONS.md): make a Gmail app password, add three settings in Render, send the test message.
+To email a list of people when the fire danger reaches High during burning season (January 15 to April 30), follow "Email when the fire danger reaches HIGH" in [EMAIL_AND_LOCATIONS.md](EMAIL_AND_LOCATIONS.md): make a Gmail app password, add three settings in Render, send the test message.
 
 ---
 

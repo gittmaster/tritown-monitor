@@ -69,7 +69,7 @@ The message under the level is the same text the original rule used for that lev
 | VERY HIGH | Fires start easily and spread rapidly. No outdoor burning! |
 | EXTREME | Every fire could become large. No burning. Call 911 immediately! |
 
-The Moderate wording was changed at the Fire Marshal's request (it used to say wildfires may occur and to restrict burning to early morning or late evening). When the level rises to HIGH or worse between January and May, an email is also sent; see [EMAIL_AND_LOCATIONS.md](EMAIL_AND_LOCATIONS.md).
+The Moderate wording was changed at the Fire Marshal's request (it used to say wildfires may occur and to restrict burning to early morning or late evening). When the level rises to HIGH or worse during burning season (January 15 to April 30), a warning email is also sent to burn-permit holders; see [EMAIL_AND_LOCATIONS.md](EMAIL_AND_LOCATIONS.md).
 
 ### Wind in the calculation
 

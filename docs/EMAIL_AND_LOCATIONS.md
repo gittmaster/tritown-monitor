@@ -2,18 +2,18 @@
 
 Two features added after the first demo, both asked for by the Fire Marshal:
 
-1. An **email** goes out when the fire danger reaches HIGH (or worse) during the spring season.
+1. An **email** goes out to people who hold a burn permit when the fire danger reaches HIGH (or worse) during burning season. It is a warning: a permit does not make a High day a safe day to burn.
 2. The dashboard can show **several stations**, with a **Location** drop-down.
 
 ---
 
-## 1. Email when the fire danger reaches HIGH
+## 1. Email when the fire danger reaches HIGH (burn-permit warning)
 
 ### The rules
 
 | Rule | Value | Setting |
 |---|---|---|
-| Season | January 1 to May 31 (Massachusetts time) | `ALERT_SEASON_MONTHS` (default `1-5`) |
+| Season | **January 15 to April 30** (the town's burning season, Massachusetts time) | `ALERT_SEASON` (default `1/15-4/30`, month/day-month/day) |
 | What sends an email | A station's level **rises** to HIGH, VERY HIGH or EXTREME from below HIGH | none |
 | Repeats | At most one email per station every 6 hours, even if the level goes up and down | `ALERT_COOLDOWN_HOURS` (default `6`) |
 | Old readings | A reading the Pi re-sends after an outage (older than 30 minutes) never sends an email | none |
@@ -21,7 +21,15 @@ Two features added after the first demo, both asked for by the Fire Marshal:
 
 If anything goes wrong with email (wrong password, Gmail down, nobody set up), the **reading is still saved** and the dashboard is unaffected. The email is sent in the background and any error is only written to the website's log.
 
-The email is plain words: the place, the level, what it means, the temperature, humidity and wind right now, and the dashboard link on the last line. The code is `alert_email.py`; the tests are `test_alert_email.py` (49 checks, nothing real is sent).
+### Who gets it, and what it says
+
+The list is the people who hold a burn permit (the Fire Marshal provides the addresses). The email says, in plain words, that they are getting it because they hold a permit, that a permit does not make a High day a safe day to burn, what the level means, the temperature, humidity and wind right now, a link to the town's Community Connect page (<https://www.communityconnect.io/info/ma-middleton>, where the fire department posts the day's burning status), and the dashboard link on the last line.
+
+**Privacy:** every address is a hidden ("Bcc") recipient. The visible "To" line is only the sending address, so nobody sees anyone else's email. Long lists are sent in hidden batches of 50.
+
+**Sending from Gmail:** an ordinary Gmail account limits how many messages it can send per day (about 500 recipients), and a long list from a personal address can be marked as spam. This is fine for testing and a short list. For the full permit-holder list, ask the town whether the fire department can send from an official address or mail service; only `SMTP_USER`, `SMTP_PASSWORD` and (for another provider) `SMTP_HOST` change.
+
+The code is `alert_email.py`. The code is `alert_email.py`; the tests are `test_alert_email.py` (49 checks, nothing real is sent).
 
 ### Settings (Render, your service, **Environment**; never GitHub)
 
@@ -32,7 +40,7 @@ The email is plain words: the place, the level, what it means, the temperature, 
 | `SMTP_PASSWORD` | That account's **app password** (16 letters; see below). Never your normal password. |
 | `SMTP_HOST`, `SMTP_PORT` | Optional. Default `smtp.gmail.com` and `587`. |
 | `ALERT_EMAIL_FROM` | Optional "from" address. Default: `SMTP_USER`. |
-| `ALERT_SEASON_MONTHS` | Optional. Default `1-5`. |
+| `ALERT_SEASON` | Optional. Default `1/15-4/30` (January 15 to April 30). |
 | `ALERT_COOLDOWN_HOURS` | Optional. Default `6`. |
 | `DASHBOARD_URL` | Optional. Default `https://tritown-monitor.onrender.com`. |
 

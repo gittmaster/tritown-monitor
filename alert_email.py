@@ -1,7 +1,10 @@
-"""Email people when the fire danger reaches HIGH (or worse) during the spring season.
+"""Email burn-permit holders when the fire danger reaches HIGH (or worse) in burning season.
+
+The list is the people who have a burn permit. The message is a warning: a permit does
+not make a HIGH day a safe day to burn.
 
 Rules (all easy to change with settings on the website host):
-  * Only from January 1 to May 31 (Massachusetts time).
+  * Only in burning season, January 15 to April 30 (Massachusetts time).
   * Only when a station's level RISES to HIGH, VERY HIGH or EXTREME. It does not
     repeat on every 5-minute reading.
   * At most one email per station every COOLDOWN_HOURS (default 6), so a level
@@ -9,12 +12,13 @@ Rules (all easy to change with settings on the website host):
   * Never for old readings that a Pi resends after an outage.
 
 Settings (set on the website host, never in the code or on GitHub):
-  ALERT_EMAIL_TO        who gets it: one or more addresses separated by commas
+  ALERT_EMAIL_TO        who gets it: one or more addresses separated by commas.
+                        Everyone is sent a hidden ("Bcc") copy, so nobody sees anyone else's address.
   SMTP_USER             the sending account (for Gmail: the full address)
   SMTP_PASSWORD         that account's app password
   SMTP_HOST / SMTP_PORT default smtp.gmail.com / 587
   ALERT_EMAIL_FROM      optional "from" address (defaults to SMTP_USER)
-  ALERT_SEASON_MONTHS   optional, default "1-5" (January to May)
+  ALERT_SEASON          optional, default "1/15-4/30" (January 15 to April 30), month/day-month/day
   ALERT_COOLDOWN_HOURS  optional, default 6
   DASHBOARD_URL         optional, default the TriTown dashboard
 
@@ -22,12 +26,14 @@ If ALERT_EMAIL_TO or the sending account is not set, nothing is sent and
 nothing else changes.
 """
 import os
+import re
 import smtplib
 import ssl
 from datetime import datetime, timedelta
 from email.message import EmailMessage
 
 DASHBOARD_URL_DEFAULT = "https://tritown-monitor.onrender.com"
+COMMUNITY_CONNECT_URL = "https://www.communityconnect.io/info/ma-middleton"
 
 LEVEL_ORDER = ["LOW", "MODERATE", "HIGH", "VERY_HIGH", "EXTREME"]
 LEVEL_WORDS = {"LOW": "Low", "MODERATE": "Moderate", "HIGH": "High",
@@ -48,16 +54,31 @@ def level_rank(level):
         return -1
 
 
-def parse_months(raw, default=(1, 5)):
-    """'1-5' means January to May. Anything unreadable falls back to the default."""
+DEFAULT_SEASON = ((1, 15), (4, 30))
+MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June", "July",
+               "August", "September", "October", "November", "December"]
+
+
+def parse_season(raw, default=DEFAULT_SEASON):
+    """'1/15-4/30' means January 15 to April 30. Anything unreadable (or backwards, or an
+    impossible date) falls back to the default."""
+    m = re.fullmatch(r"\s*(\d{1,2})/(\d{1,2})\s*-\s*(\d{1,2})/(\d{1,2})\s*", str(raw))
+    if not m:
+        return default
+    m1, d1, m2, d2 = (int(x) for x in m.groups())
     try:
-        first, last = str(raw).split("-")
-        first, last = int(first), int(last)
-        if 1 <= first <= last <= 12:
-            return first, last
-    except (ValueError, AttributeError):
-        pass
-    return default
+        datetime(2001, m1, d1)
+        datetime(2001, m2, d2)
+    except ValueError:
+        return default
+    if (m1, d1) > (m2, d2):
+        return default
+    return (m1, d1), (m2, d2)
+
+
+def season_text(season=DEFAULT_SEASON):
+    (m1, d1), (m2, d2) = season
+    return "%s %d to %s %d" % (MONTH_NAMES[m1], d1, MONTH_NAMES[m2], d2)
 
 
 def local_now():
@@ -69,16 +90,17 @@ def local_now():
         return datetime.utcnow() - timedelta(hours=5)
 
 
-def in_season(when, months=(1, 5)):
-    return months[0] <= when.month <= months[1]
+def in_season(when, season=DEFAULT_SEASON):
+    """True when the date (year ignored) falls inside the season, both ends included."""
+    return season[0] <= (when.month, when.day) <= season[1]
 
 
 def should_send(prev_level, new_level, last_sent_utc, now_utc, local_when,
-                reading_age_minutes=0, months=(1, 5), cooldown_hours=6):
+                reading_age_minutes=0, season=DEFAULT_SEASON, cooldown_hours=6):
     """Decide if this reading should trigger an email. Pure function, easy to test."""
     if level_rank(new_level) < level_rank("HIGH"):
         return False
-    if not in_season(local_when, months):
+    if not in_season(local_when, season):
         return False
     if reading_age_minutes > 30:          # an old reading resent after an outage
         return False
@@ -90,12 +112,23 @@ def should_send(prev_level, new_level, last_sent_utc, now_utc, local_when,
 
 
 def build_message(location, level, temp_c, humidity, wind_mph, wind_deg,
-                  sender, recipients, dashboard_url=DASHBOARD_URL_DEFAULT, when_text=""):
-    """Plain-language email. No jargon."""
+                  sender, recipients, dashboard_url=DASHBOARD_URL_DEFAULT, when_text="",
+                  season=DEFAULT_SEASON):
+    """Plain-language warning for people who hold a burn permit. No jargon.
+
+    The visible "To" line is the sender, so the people on the list never see each other's
+    addresses; send() delivers to the real list in small hidden batches."""
     word = LEVEL_WORDS.get(level, level.title())
     temp_f = temp_c * 9 / 5 + 32 if temp_c is not None else None
-    lines = ["The fire danger at %s has reached %s." % (location, word.upper()), ""]
+    lines = ["Burning warning: the fire danger at %s has reached %s." % (location, word.upper()), ""]
+    lines.append("You are getting this because you hold a burn permit. A permit does not make a "
+                 "%s fire danger day a safe day to burn. Please use extra caution today." % word.upper())
+    lines.append("")
     lines.append("What it means: %s" % WHAT_IT_MEANS.get(level, ""))
+    lines.append("")
+    lines.append("The Middleton Fire Department posts the burning status for the day on Community Connect. "
+                 "Please check it before you burn, and call the fire department with any questions:")
+    lines.append(COMMUNITY_CONNECT_URL)
     lines.append("")
     lines.append("Right now at %s:" % location)
     if temp_f is not None:
@@ -112,7 +145,7 @@ def build_message(location, level, temp_c, humidity, wind_mph, wind_deg,
     if when_text:
         lines.append("  Time: %s" % when_text)
     lines += ["",
-              "You get this message when the level rises to High or higher between January and May.",
+              "You get this message when the fire danger rises to High or higher during burning season (%s)." % season_text(season),
               "It is sent once per rise, not every few minutes.",
               "",
               "See the live dashboard:",
@@ -120,7 +153,7 @@ def build_message(location, level, temp_c, humidity, wind_mph, wind_deg,
     msg = EmailMessage()
     msg["Subject"] = "Fire danger %s at %s" % (word.upper(), location)
     msg["From"] = sender
-    msg["To"] = ", ".join(recipients)
+    msg["To"] = sender
     msg.set_content("\n".join(lines))
     return msg
 
@@ -143,7 +176,7 @@ def settings_from_env(env=None):
         "host": str(env.get("SMTP_HOST", "smtp.gmail.com")).strip() or "smtp.gmail.com",
         "port": port,
         "sender": str(env.get("ALERT_EMAIL_FROM", "")).strip() or user,
-        "months": parse_months(env.get("ALERT_SEASON_MONTHS", "1-5")),
+        "season": parse_season(env.get("ALERT_SEASON", "1/15-4/30")),
         "cooldown_hours": cooldown,
         "dashboard_url": str(env.get("DASHBOARD_URL", DASHBOARD_URL_DEFAULT)).strip() or DASHBOARD_URL_DEFAULT,
     }
@@ -153,10 +186,17 @@ def configured(s):
     return bool(s["to"] and s["user"] and s["password"])
 
 
+BATCH_SIZE = 50    # recipients per delivery, so one huge list never trips the mail server's limits
+
+
 def send(msg, s):
-    """Send one message. Raises on failure; callers decide how to handle it."""
+    """Deliver one message to everyone on the list, in hidden batches of BATCH_SIZE.
+    Nobody's address appears in the message itself. Raises on failure; callers decide
+    how to handle it."""
+    recipients = list(s["to"])
     context = ssl.create_default_context()
     with smtplib.SMTP(s["host"], s["port"], timeout=15) as server:
         server.starttls(context=context)
         server.login(s["user"], s["password"])
-        server.send_message(msg)
+        for i in range(0, len(recipients), BATCH_SIZE):
+            server.send_message(msg, from_addr=s["sender"], to_addrs=recipients[i:i + BATCH_SIZE])

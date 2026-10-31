@@ -275,7 +275,7 @@ def send_high_alert_now(msg, settings, location, level):
         print("Fire danger email failed: %s" % str(e))
 
 def maybe_send_high_alert(location, prev_level, level, temp, humidity, wind_speed, wind_direction, age_minutes):
-    """Email people when a station's level rises to HIGH or more between January and May.
+    """Email people when a station's level rises to HIGH or more in burning season (January 15 to April 30).
     Fenced off: any problem here is only printed, never allowed to affect a reading."""
     try:
         if alert_email is None:
@@ -285,11 +285,11 @@ def maybe_send_high_alert(location, prev_level, level, temp, humidity, wind_spee
             return
         local_when = alert_email.local_now()
         if not alert_email.should_send(prev_level, level, last_alert_email(location), datetime.utcnow(),
-                                       local_when, age_minutes, s['months'], s['cooldown_hours']):
+                                       local_when, age_minutes, s['season'], s['cooldown_hours']):
             return
         msg = alert_email.build_message(location, level, temp, humidity, wind_speed, wind_direction,
                                         s['sender'], s['to'], s['dashboard_url'],
-                                        local_when.strftime('%b %d, %I:%M %p').replace(' 0', ' '))
+                                        local_when.strftime('%b %d, %I:%M %p').replace(' 0', ' '), s['season'])
         threading.Thread(target=send_high_alert_now, args=(msg, s, location, level), daemon=True).start()
     except Exception as e:
         print("High alert check failed: %s" % str(e))
@@ -360,7 +360,7 @@ def test_email():
         return jsonify({'success': False, 'error': 'email is not set up yet (needs ALERT_EMAIL_TO, SMTP_USER, SMTP_PASSWORD)'}), 400
     try:
         msg = alert_email.build_message('Test Station', 'HIGH', 12.0, 38.0, 8.0, 225.0,
-                                        s['sender'], s['to'], s['dashboard_url'], 'this is only a test')
+                                        s['sender'], s['to'], s['dashboard_url'], 'this is only a test', s['season'])
         msg.replace_header('Subject', 'TEST - ' + msg['Subject'])
         alert_email.send(msg, s)
         return jsonify({'success': True, 'sent_to': len(s['to'])})

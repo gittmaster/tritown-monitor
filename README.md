@@ -100,7 +100,7 @@ Website settings are environment variables (on Render: your service, **Environme
 | `ALERT_METHOD` | `legacy` = original rule. `class_day` = the fire chief's method. | `legacy` |
 | `HERBACEOUS_STAGE` | `cured`, `transition` or `green`. Only used by `class_day`. Change it when the district announces the season changed. | `transition` |
 | `ALERT_EMAIL_TO`, `SMTP_USER`, `SMTP_PASSWORD` | The HIGH-alert email: who gets it, the sending Gmail address, and its app password. All three needed; otherwise email is off. **Never put these on GitHub.** | unset (off) |
-| `ALERT_SEASON_MONTHS`, `ALERT_COOLDOWN_HOURS`, `SMTP_HOST`, `SMTP_PORT`, `ALERT_EMAIL_FROM`, `DASHBOARD_URL` | Optional email tuning. See [docs/EMAIL_AND_LOCATIONS.md](docs/EMAIL_AND_LOCATIONS.md). | `1-5`, `6`, Gmail, `587`, sender, our dashboard |
+| `ALERT_SEASON`, `ALERT_COOLDOWN_HOURS`, `SMTP_HOST`, `SMTP_PORT`, `ALERT_EMAIL_FROM`, `DASHBOARD_URL` | Optional email tuning. See [docs/EMAIL_AND_LOCATIONS.md](docs/EMAIL_AND_LOCATIONS.md). | `1/15-4/30`, `6`, Gmail, `587`, sender, our dashboard |
 | `NTFY_TOPIC` (GitHub secret) | Phone-alert topic for the outside check. Optional. | the standard topic |
 
 To go back to the original alert rule, set `ALERT_METHOD` to `legacy` (or delete it). Nothing else changes.
@@ -192,7 +192,7 @@ We did not wait for answers on these; we picked the most sensible option and lis
 - Our copy of Chart A gives fuel moisture 28 (the chief wrote 29) for 63 F, 85 %, Green; the class is the same.
 - Readings are kept 60 days (`RETENTION_DAYS`).
 - The forecast shows the highest-risk hour of each day; days 4 to 7 are labelled "Outlook, less certain".
-- Email alerts: only from January to May, only when a station's level **rises** to High or worse, at most one per station every 6 hours, to a list the Fire Marshal provides. We test with our own Gmail first.
+- Email alerts are a warning to people who hold a burn permit: a permit does not make a High day safe to burn. They go out only during burning season (January 15 to April 30, as in the town's open-burning rules), only when a station's level **rises** to High or worse, at most one per station every 6 hours, to a list the Fire Marshal provides. Everyone is sent a hidden copy, so no one sees anyone else's address. We test with our own Gmail first.
 - The Moderate message reads "Open burning is prohibited. Please contact your local fire department for more details." (requested by the Fire Marshal).
 - The first unit is named **Home**; the unit at the fire station is named **Middleton Fire Station**.
 - The method is stricter than the original rule: breezy days can read Very High where the original rule said Low.
