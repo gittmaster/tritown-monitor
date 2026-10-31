@@ -283,6 +283,8 @@ def maybe_send_high_alert(location, prev_level, level, temp, humidity, wind_spee
         s = alert_email.settings_from_env()
         if not alert_email.configured(s):
             return
+        if not alert_email.location_allowed(location, s['locations']):
+            return                # a test unit or a station not on the list never emails
         local_when = alert_email.local_now()
         if not alert_email.should_send(prev_level, level, last_alert_email(location), datetime.utcnow(),
                                        local_when, age_minutes, s['season'], s['cooldown_hours']):

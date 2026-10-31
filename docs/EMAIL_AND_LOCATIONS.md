@@ -40,6 +40,7 @@ The code is `alert_email.py`. The code is `alert_email.py`; the tests are `test_
 | `SMTP_PASSWORD` | That account's **app password** (16 letters; see below). Never your normal password. |
 | `SMTP_HOST`, `SMTP_PORT` | Optional. Default `smtp.gmail.com` and `587`. |
 | `ALERT_EMAIL_FROM` | Optional "from" address. Default: `SMTP_USER`. |
+| `ALERT_EMAIL_LOCATIONS` | Which stations may send email, names separated by commas and written exactly as on the dashboard. **Set it to `Middleton Fire Station`** so the "Home" test unit never emails the permit holders. If it is not set, every station sends. |
 | `ALERT_SEASON` | Optional. Default `1/15-4/30` (January 15 to April 30). |
 | `ALERT_COOLDOWN_HOURS` | Optional. Default `6`. |
 | `DASHBOARD_URL` | Optional. Default `https://tritown-monitor.onrender.com`. |
@@ -61,7 +62,7 @@ Email needs a Render **paid** instance (ours is); free instances block outgoing 
    The reply `{"success": true, "sent_to": 1}` means it went out. The subject starts with `TEST - ` so nobody mistakes it for a real alert.
 4. **Add more people** by adding their addresses to `ALERT_EMAIL_TO` with commas, then save and deploy. Test first with your own address only; add the fire department's list once it works.
 
-For the real list, consider a dedicated sending address (for example `tritown.alerts@gmail.com`) instead of a personal one. Only `SMTP_USER` and `SMTP_PASSWORD` change.
+The sending address is the dedicated account `tritown.alerts@gmail.com` (not a personal one). Create its app password the same way, signed in to that account. If the town later provides its own address or mail service, only `SMTP_USER`, `SMTP_PASSWORD` and (for another provider) `SMTP_HOST` change.
 
 ### Switching it off or on
 

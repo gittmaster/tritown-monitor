@@ -92,6 +92,12 @@ s = ae.settings_from_env({"ALERT_EMAIL_TO": " a@x.com ,b@x.com,, ", "SMTP_USER":
 check("addresses split and trimmed", s["to"] == ["a@x.com", "b@x.com"])
 check("sender defaults to the account", s["sender"] == "u@x.com")
 check("season defaults to Jan 15 to Apr 30", s["season"] == ((1, 15), (4, 30)))
+check("every station may send when no list is set", s["locations"] == [] and ae.location_allowed("Anywhere", s["locations"]))
+only = ae.settings_from_env({"ALERT_EMAIL_LOCATIONS": " Middleton Fire Station , Library "})["locations"]
+check("station list is split and trimmed", only == ["Middleton Fire Station", "Library"])
+check("a listed station may send", ae.location_allowed("Middleton Fire Station", only))
+check("capital letters and spaces do not matter", ae.location_allowed("  middleton   fire station", only))
+check("an unlisted station may not send", ae.location_allowed("Home", only) is False)
 check("Gmail is the default mail server", s["host"] == "smtp.gmail.com" and s["port"] == 587)
 check("configured when all three are set", ae.configured(s))
 check("not configured without a password", not ae.configured(ae.settings_from_env({"ALERT_EMAIL_TO": "a@x.com", "SMTP_USER": "u@x.com"})))
@@ -175,6 +181,18 @@ old = (datetime.utcnow() - timedelta(hours=3)).strftime("%Y-%m-%dT%H:%M:%S")
 post("Old Pi", *LOW)
 post("Old Pi", *HIGH, recorded_at=old)
 check("an old resent reading does not email", len(sent) == 2)
+
+# only the chosen stations send: Home is a test unit and must stay quiet
+ae.local_now = lambda: datetime(2026, 3, 10, 9, 0, 0)
+os.environ["ALERT_EMAIL_LOCATIONS"] = "Station Two"
+before = len(sent)
+post("Home Test", *LOW)
+r = post("Home Test", *HIGH)
+check("unlisted station: reading saved, no email", r.status_code == 201 and len(sent) == before)
+post("Station Two", *LOW)
+post("Station Two", *HIGH)
+check("listed station does email", len(sent) == before + 1 and "Station Two" in sent[-1]["Subject"])
+os.environ.pop("ALERT_EMAIL_LOCATIONS")
 
 # a broken mail server must not break readings
 def boom(m, settings):

@@ -100,6 +100,7 @@ Website settings are environment variables (on Render: your service, **Environme
 | `ALERT_METHOD` | `legacy` = original rule. `class_day` = the fire chief's method. | `legacy` |
 | `HERBACEOUS_STAGE` | `cured`, `transition` or `green`. Only used by `class_day`. Change it when the district announces the season changed. | `transition` |
 | `ALERT_EMAIL_TO`, `SMTP_USER`, `SMTP_PASSWORD` | The HIGH-alert email: who gets it, the sending Gmail address, and its app password. All three needed; otherwise email is off. **Never put these on GitHub.** | unset (off) |
+| `ALERT_EMAIL_LOCATIONS` | Which stations may send the email (e.g. `Middleton Fire Station`), so a test unit stays quiet. Not set = all stations. | all |
 | `ALERT_SEASON`, `ALERT_COOLDOWN_HOURS`, `SMTP_HOST`, `SMTP_PORT`, `ALERT_EMAIL_FROM`, `DASHBOARD_URL` | Optional email tuning. See [docs/EMAIL_AND_LOCATIONS.md](docs/EMAIL_AND_LOCATIONS.md). | `1/15-4/30`, `6`, Gmail, `587`, sender, our dashboard |
 | `NTFY_TOPIC` (GitHub secret) | Phone-alert topic for the outside check. Optional. | the standard topic |
 

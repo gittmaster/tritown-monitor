@@ -18,6 +18,9 @@ Settings (set on the website host, never in the code or on GitHub):
   SMTP_PASSWORD         that account's app password
   SMTP_HOST / SMTP_PORT default smtp.gmail.com / 587
   ALERT_EMAIL_FROM      optional "from" address (defaults to SMTP_USER)
+  ALERT_EMAIL_LOCATIONS optional: only these stations send email (names separated by commas, exactly as
+                        they appear on the dashboard). Not set = every station sends. Set it to the real
+                        station(s) so a test unit never emails the list.
   ALERT_SEASON          optional, default "1/15-4/30" (January 15 to April 30), month/day-month/day
   ALERT_COOLDOWN_HOURS  optional, default 6
   DASHBOARD_URL         optional, default the TriTown dashboard
@@ -88,6 +91,15 @@ def local_now():
         return datetime.now(ZoneInfo("America/New_York"))
     except Exception:
         return datetime.utcnow() - timedelta(hours=5)
+
+
+def location_allowed(location, allowed):
+    """allowed is the list from ALERT_EMAIL_LOCATIONS. Empty means every station may send.
+    Names match ignoring capital letters and extra spaces."""
+    if not allowed:
+        return True
+    norm = lambda x: " ".join(str(x).lower().split())
+    return norm(location) in {norm(a) for a in allowed}
 
 
 def in_season(when, season=DEFAULT_SEASON):
@@ -176,6 +188,7 @@ def settings_from_env(env=None):
         "host": str(env.get("SMTP_HOST", "smtp.gmail.com")).strip() or "smtp.gmail.com",
         "port": port,
         "sender": str(env.get("ALERT_EMAIL_FROM", "")).strip() or user,
+        "locations": [a.strip() for a in str(env.get("ALERT_EMAIL_LOCATIONS", "")).split(",") if a.strip()],
         "season": parse_season(env.get("ALERT_SEASON", "1/15-4/30")),
         "cooldown_hours": cooldown,
         "dashboard_url": str(env.get("DASHBOARD_URL", DASHBOARD_URL_DEFAULT)).strip() or DASHBOARD_URL_DEFAULT,
