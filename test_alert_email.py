@@ -73,7 +73,7 @@ msg = ae.build_message("Middleton Fire Station", "HIGH", 25.0, 28.0, 8.0, 225.0,
                        "sender@example.com", ["one@example.com", "two@example.com"],
                        "https://tritown-monitor.onrender.com", "Mar 10, 8:00 AM")
 body = msg.get_content()
-check("subject names level and place", msg["Subject"] == "Fire danger HIGH at Middleton Fire Station")
+check("subject names level and place", msg["Subject"] == "Burning warning: fire danger HIGH at Middleton Fire Station")
 check("addresses are hidden: not in any header", "one@example.com" not in msg.as_string() and "two@example.com" not in msg.as_string())
 check("the visible To line is the sender", msg["To"] == "sender@example.com")
 check("it is a burn-permit warning", "burn permit" in body and "does not make" in body)

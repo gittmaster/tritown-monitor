@@ -51,7 +51,7 @@ Email needs a Render **paid** instance (ours is); free instances block outgoing 
 
 ### Setting it up (one step at a time)
 
-1. **Create an app password.** Sign in to the sending Gmail account. 2-Step Verification must be on. Open <https://myaccount.google.com/apppasswords>, type the name `TriTown Alerts`, click **Create**, and copy the 16 letters. You can delete it there at any time.
+1. **Create an app password.** Sign in to the sending Gmail account. 2-Step Verification must be on. Open <https://myaccount.google.com/apppasswords>, type the name `Middleton Fire Alerts`, click **Create**, and copy the 16 letters. You can delete it there at any time.
 2. **Put the three settings in Render.** Service, **Environment**, add `ALERT_EMAIL_TO`, `SMTP_USER`, `SMTP_PASSWORD`, then **Save, rebuild, and deploy**.
 3. **Send a test message.** From PowerShell (use your own API key):
 
@@ -62,7 +62,15 @@ Email needs a Render **paid** instance (ours is); free instances block outgoing 
    The reply `{"success": true, "sent_to": 1}` means it went out. The subject starts with `TEST - ` so nobody mistakes it for a real alert.
 4. **Add more people** by adding their addresses to `ALERT_EMAIL_TO` with commas, then save and deploy. Test first with your own address only; add the fire department's list once it works.
 
-The sending address is the dedicated account `tritown.alerts@gmail.com` (not a personal one). Create its app password the same way, signed in to that account. If the town later provides its own address or mail service, only `SMTP_USER`, `SMTP_PASSWORD` and (for another provider) `SMTP_HOST` change.
+The sending address is the dedicated account `middleton.fire.alerts@gmail.com` (not a personal one; the sender name is "Middleton Fire Danger Alerts"). Create its app password the same way, signed in to that account. If the town later provides its own address or mail service, only `SMTP_USER`, `SMTP_PASSWORD` and (for another provider) `SMTP_HOST` change.
+
+### What is set up now (Oct 31, 2026)
+
+- **Sending account:** `middleton.fire.alerts@gmail.com`, with 2-Step Verification on (a passkey) and an app password named `Middleton Fire Alerts`. Only the 16-letter app password is used by the website; the account's own password is never stored anywhere in the system.
+- **Render settings:** `SMTP_USER` = the address above, `SMTP_PASSWORD` = the app password, `ALERT_EMAIL_TO` = our own Gmail for testing, `ALERT_EMAIL_LOCATIONS` = `Middleton Fire Station`. Nothing else is needed: the mail server defaults to Gmail.
+- **Test:** the "TEST - " message arrived, with the recipients hidden (the visible "To" line is the sending address only).
+- **To go live with the real list:** put the Fire Marshal's addresses in `ALERT_EMAIL_TO` (commas between them), save, and send one more test. Real warnings can only go out between January 15 and April 30.
+- **If the app password is ever lost or leaked:** in the account, open <https://myaccount.google.com/apppasswords>, delete it, make a new one, and put the new value in Render's `SMTP_PASSWORD`.
 
 ### Switching it off or on
 

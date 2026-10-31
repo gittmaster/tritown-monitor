@@ -163,7 +163,7 @@ def build_message(location, level, temp_c, humidity, wind_mph, wind_deg,
               "See the live dashboard:",
               dashboard_url]
     msg = EmailMessage()
-    msg["Subject"] = "Fire danger %s at %s" % (word.upper(), location)
+    msg["Subject"] = "Burning warning: fire danger %s at %s" % (word.upper(), location)
     msg["From"] = sender
     msg["To"] = sender
     msg.set_content("\n".join(lines))
